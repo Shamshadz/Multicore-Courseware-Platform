@@ -18,6 +18,8 @@ class User(AbstractUser):
     )
     mobile = models.CharField(validators=[phone_regex], max_length=10, unique=True)
     email = models.EmailField(null=True, blank=True)
+    first_name = models.CharField(null=True, blank=True, max_length=256)
+    last_name = models.CharField(null=True, blank=True, max_length=256)
     date_joined = models.DateTimeField(default=timezone.now)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

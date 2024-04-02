@@ -11,6 +11,7 @@ const Login = () => {
     // Create the submit method.
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         const user = {
             mobile: mobile,
             password: password
@@ -34,7 +35,7 @@ const Login = () => {
             localStorage.setItem('refresh_token', data.refresh);
             axios.defaults.headers.common['Authorization'] =
                 `Bearer ${data['access']}`;
-            window.location.href = '/';
+            window.location.href = '/home';
         } catch (error) {
             console.error('Error while logging in:', error);
             // Handle error, maybe show a message to the user

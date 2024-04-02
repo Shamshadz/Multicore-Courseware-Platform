@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework import status
+from notebook_utlis.views import createJhubUser
 
 import base64
 import pyotp
@@ -18,6 +19,7 @@ import json
 
 # Create your views here.
 User = get_user_model()
+
 
 class CreateUser(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -27,27 +29,37 @@ class CreateUser(generics.CreateAPIView):
         mobile = request.data["mobile"]
         otp = request.data["otp"]
         otp_token = request.data["otp_token"]
+        password = request.data["password"]
 
         otp_secret = base64.b32encode(f"{mobile}_{otp_token}".encode())
         totp = pyotp.TOTP(otp_secret, digits=4, interval=600)
 
         if otp == "1234" or totp.verify(otp):
-            # self.perform_create(serializer)
-            # headers = self.get_success_headers(serializer.data)
-            serializer = UserSerializer(
-                data=request.data, context={"request": request}
-            )
-            if serializer.is_valid():
-                serializer.save()  # create method will be called here
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer = self.get_serializer(data=request.data)
+
+            created_jhub_user = createJhubUser(request.data["first_name"])
+
+            if created_jhub_user and serializer.is_valid():
+                serializer.save()
+
+                user = User.objects.get(mobile=mobile)
+
+                if (not user.is_superuser) or (not user.is_staff):
+                    user.set_password(password)
+                user.save()
+
+                data = serializer.data
+                refresh = RefreshToken.for_user(user)
+                data["access_token"] = str(refresh.access_token)
+                data["refresh_token"] = str(refresh)
+
+                return Response(data=data, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response(
-                {"message": "OTP verification unsuccessful"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"message": "OTP verification unsuccessful"}, status=status.HTTP_400_BAD_REQUEST)
 
+        
 class SendOtp(APIView):
     serializer_class = PhoneSerializer
     def post(self, request, *args, **kwargs):
@@ -119,7 +131,7 @@ def get_token(request):
         print("access token :", e)
         return JsonResponse({"success": False})
 
-    serialized_token = json.dumps({"token": access_token})
+    serialized_token = json.dumps({"access_token": access_token})
     return JsonResponse(serialized_token, safe=False)
 
 
@@ -161,7 +173,6 @@ class LogoutView(APIView):
         try:
             refresh_token = request.data["refresh_token"]
             token = RefreshToken(refresh_token)
-            print(token)
             # token.blacklist()
             return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:

@@ -1,46 +1,25 @@
-// Import the react JS packages
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from "react";
 import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Courses from '../component/Courses.jsx';
+import { useNavigate } from "react-router-dom";
 
-// Define the Home component.
 const Home = () => {
-    const [message, setMessage] = useState('');
+    const [message, setMessage] = useState('Shamshad');
+    const [buttonClicked, setButtonClicked] = useState(false);
 
+    const navigate = useNavigate();
 
-    // Function to open the Jupyter notebook URL
-    const openNotebookUrl = () => {
-        const notebookUrl = 'http://192.168.56.3/user/admin/notebooks/OPENMP.ipynb?token=a59b90543f0a4546b083feef028883ed';
-        window.open(notebookUrl, '_blank');
+    const signUpPage = () => {
+        navigate('/signup');
     }
 
-    // Call the function when needed
-    openNotebookUrl();
-
-
     useEffect(() => {
-        if (localStorage.getItem('access_token') === null) {
-            window.location.href = '/login'
+        if (buttonClicked) {
+            const notebookUrl = 'http://192.168.56.3/user/admin/notebooks/OPENMP.ipynb?token=a59b90543f0a4546b083feef028883ed';
+            window.open(notebookUrl, '_blank');
         }
-        else {
-            (async () => {
-                try {
-                    const { data } = await axios.get(
-                        'http://localhost:8000/home/', {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    }
-                    );
-                    setMessage(data.message);
-                } catch (e) {
-                    console.log('not auth')
-                }
-            })()
-        };
-    }, []);
+    }, [buttonClicked]);
 
     return (
         <Container className="mt-4">
@@ -48,8 +27,12 @@ const Home = () => {
                 <h3>Hi {message}</h3>
             </div>
 
-            <Button variant="primary" onClick={openNotebookUrl}>
+            <Button variant="primary" onClick={() => setButtonClicked(true)}>
                 LOGIN JHUB
+            </Button>
+
+            <Button variant="primary" onClick={signUpPage}>
+                Signup
             </Button>
 
             <Container>

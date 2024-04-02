@@ -1,20 +1,16 @@
 from django.contrib import admin
-from .models import (User)
-from django.contrib.sessions.models import Session
-from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model
 
-# Register your models here.
 User = get_user_model()
 
 @admin.register(User)
-class UserAdmin(DefaultUserAdmin):
+class CustomUserAdmin(DefaultUserAdmin):
     fieldsets = (
         (
             None,
-            {"fields": ("mobile", "first_name", "last_name", "email")},
+            {"fields": ("mobile", "first_name", "last_name", "email", "password")},
         ),
         (
             _("Permissions"),
@@ -73,6 +69,5 @@ class UserAdmin(DefaultUserAdmin):
     search_fields = ["mobile", "first_name", "last_name"]
     readonly_fields = ["last_login", "date_joined"]
     ordering = ["mobile"]
-    exclude = ["username", "password"]
-
+    exclude = ["username"]
 

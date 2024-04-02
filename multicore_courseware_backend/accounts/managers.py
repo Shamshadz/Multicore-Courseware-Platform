@@ -1,31 +1,25 @@
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
-
 class UserManager(BaseUserManager):
     """
-    Custom user model manager where email is the unique identifiers
+    Custom user model manager where mobile is the unique identifiers
     for authentication instead of usernames.
     """
 
     def create_user(self, mobile, password=None, **extra_fields):
-        """
-        Create and save a User with the given Phone and password.
-        """
-        if not mobile:
-            raise ValueError(_("mobile must be set"))
-        if password is not None:
-            user = self.model(mobile=mobile, password=password, **extra_fields)
-            user.save()
+        user = self.model(mobile=mobile, **extra_fields)
+        if password:
+            user.set_password(password)
         else:
-            user = self.model(mobile=mobile, password=password, **extra_fields)
             user.set_unusable_password()
-            user.save()
+        user.is_active = True  # Ensure user is active
+        user.save(using=self._db)
         return user
 
-    def create_superuser(self, mobile, password, **extra_fields):
+    def create_superuser(self, mobile, password=None, **extra_fields):
         """
-        Create and save a SuperUser with the given email and password.
+        Create and save a SuperUser with the given mobile and password.
         """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -35,7 +29,4 @@ class UserManager(BaseUserManager):
             raise ValueError(_("Superuser must have is_staff=True."))
         if extra_fields.get("is_superuser") is not True:
             raise ValueError(_("Superuser must have is_superuser=True."))
-        user = self.create_user(mobile, password, **extra_fields)
-        user.set_password(password)
-        user.save()
-        return user
+        return self.create_user(mobile, password, **extra_fields)

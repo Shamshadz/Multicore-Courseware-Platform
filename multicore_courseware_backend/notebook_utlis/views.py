@@ -62,6 +62,18 @@ def notebook_upload_req(encoded_string, token):
     else:
         print("Failed to upload notebook:", response.json())
 
+
+def uploadNotebook(username):
+    # Extracting token from the request header
+
+    ## encoded data
+    token = "a59b90543f0a4546b083feef028883ed"
+    file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
+    encoded_string = encode_file_to_base64(file_path)
+    if encoded_string:
+        notebook_upload_req(encoded_string, token, username)
+
+
 class UploadNotebookAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -70,7 +82,7 @@ class UploadNotebookAPIView(APIView):
         
 
         ## encoded data
-        token = "fb840155ec8c48348f2510a4907edb0c"
+        token = "a59b90543f0a4546b083feef028883ed"
         file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
         encoded_string = encode_file_to_base64(file_path)
         if encoded_string:
@@ -149,3 +161,35 @@ class GetCorsAPIView(APIView):
         print(csrf_token_value)
 
         return JsonResponse({'_xsrf': csrf_token_value})
+    
+
+import requests
+def createJhubUser(username) :
+
+    # Define the request body
+    body = {
+        "usernames": [
+            f"{username}"
+        ],
+        "admin": False
+    }
+
+    # Define the URL
+    url = "http://192.168.56.3/hub/api/users"
+
+    # Define headers with CSRF token
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "token a59b90543f0a4546b083feef028883ed"  # Replace YOUR_CSRF_TOKEN_HERE with your CSRF token
+    }
+
+    # Make the POST request
+    response = requests.post(url, json=body, headers=headers)
+
+    # Check if the request was successful
+    if response.status_code == 201:
+        print("User created successfully for JupyterHub")
+        return True
+    else:
+        print(f"Error: {response.status_code} - {response.reason}")
+        return False

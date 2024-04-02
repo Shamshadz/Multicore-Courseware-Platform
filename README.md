@@ -1,89 +1,93 @@
-Here's a basic `README.md` template for your GitHub repository:
-
-```markdown
 # Multicore Courseware Platform
+
+This repository contains the code for a multicore courseware platform, consisting of both frontend and backend components.
 
 ## Frontend
 
-To run the frontend, follow these steps:
+### Installation
 
 1. Navigate to the frontend directory:
-   ```
+   ```bash
    cd multicore-courseware-frontend
    ```
 
 2. Update the environment variables in the `.env` file with your configuration values.
 
 3. Install dependencies:
-   ```
+   ```bash
    npm install
    ```
 
-4. Start the development server:
-   ```
+### Usage
+
+Start the development server:
+   ```bash
    npm start
    ```
 
 ## Backend
 
-To run the backend, follow these steps:
+### Installation
 
 1. Navigate to the backend directory:
-   ```
+   ```bash
    cd multicore_courseware_backend
    ```
 
 2. Set up a virtual environment:
-   ```
+   ```bash
    python3 -m venv <myenv-name>
    ```
 
 3. Activate the virtual environment:
    - For Windows:
-     ```
+     ```bash
      <myenv-name>\Scripts\activate
      ```
    - For Linux:
-     ```
+     ```bash
      source <myenv-name>/bin/activate
      ```
 
 4. Install dependencies:
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
-5. Apply migrations:
-   ```
+### Database Setup
+
+Apply migrations:
+   ```bash
    python3 manage.py makemigrations
    python3 manage.py migrate
    ```
 
-6. Run the server:
-   ```
+### Usage
+
+Run the server:
+   ```bash
    python3 manage.py runserver
    ```
 
-7. Access the admin panel:
+### Admin Panel
+
+Access the admin panel:
    - URL: http://localhost/admin
    - Username: <admin-username>
    - Password: admin
 
 ## JupyterHub Setup (TLJH)
 
-To set up JupyterHub on a local or virtual machine Linux server:
+### Installation
 
 1. Install Python and required packages:
-   ```
+   ```bash
    sudo apt install python3 python3-dev git curl
    ```
 
 2. Run the TLJH bootstrap script:
-   ```
+   ```bash
    curl -L https://tljh.jupyter.org/bootstrap.py | sudo -E python3 - --admin <admin-user-name>
    ```
 
 3. Access JupyterHub via the public IP address.
-```
-
-Feel free to customize this template further to provide more specific instructions or additional details about your project.

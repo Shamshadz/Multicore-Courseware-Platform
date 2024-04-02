@@ -63,6 +63,7 @@ Apply migrations:
    ```
 
 ### Usage
+No Need to createsuperuser - database file is also shared (below is its admin panel credentials)
 
 Run the server:
    ```bash
@@ -73,12 +74,12 @@ Run the server:
 
 Access the admin panel:
    - URL: http://localhost/admin
-   - Username: <admin-username>
+   - Username: <admin-username> // it is shamshad mobile number
    - Password: admin
 
 ## JupyterHub Setup (TLJH)
 
-### Installation
+### Installation - For Linux server 
 
 1. Install Python and required packages:
    ```bash

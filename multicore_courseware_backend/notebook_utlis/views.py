@@ -12,11 +12,18 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import requests
+import os
 # Create your views here.
+
+from dotenv import load_dotenv
 import os
 
-base_jhub_url = os.environ.get('BASE_JHUB_URL')
-jhub_admin_token = os.environ.get('JHUB_ADMIN_TOKEN')
+# Load environment variables from .env file
+load_dotenv()
+
+# Retrieve the value of BASE_JHUB_URL
+base_jhub_url = os.getenv('BASE_JHUB_URL')
+jhub_admin_token = os.getenv('JHUB_ADMIN_TOKEN')
 
 
 ## util function to help upload notebook to server
@@ -76,6 +83,8 @@ def uploadNotebook(username):
     encoded_string = encode_file_to_base64(file_path)
     if encoded_string:
         notebook_upload_req(encoded_string, token, username)
+        return True
+    return False
 
 
 class UploadNotebookAPIView(APIView):
@@ -83,14 +92,17 @@ class UploadNotebookAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         # Extracting token from the request header
-        
+        user = self.request.user
+        username = user.first_name.lower()
+        print(username)
 
         ## encoded data
         token = f"{jhub_admin_token}"
+        print(token)
         file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
         encoded_string = encode_file_to_base64(file_path)
         if encoded_string:
-            notebook_upload_req(encoded_string, token)
+            notebook_upload_req(encoded_string, token, username)
 
         # Perform your processing here...
         try:
@@ -197,3 +209,52 @@ def createJhubUser(username) :
     else:
         print(f"Error: {response.status_code} - {response.reason}")
         return False
+    
+import threading
+
+
+class GetJhubUserTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def _start_server(self, base_jhub_url, first_name, headers):
+        start_server_response = requests.post(f"{base_jhub_url}/hub/api/users/{first_name}/server", headers=headers)
+        return start_server_response
+
+    def get(self, request):
+        first_name = request.user.first_name.lower()
+
+        url = f"{base_jhub_url}/hub/api/users/{first_name.lower()}/tokens"
+
+        headers = {
+            'Authorization': f"token {jhub_admin_token}",
+            'Content-Type': 'application/json',
+        }
+
+        # Fetch CSRF token from Django server
+        csrf_token = requests.get(f"{base_jhub_url}/get-csrf-token/")
+        csrf_token_value = csrf_token.cookies.get('_xsrf')
+
+        # Include CSRF token in headers
+        headers['_xsrf'] = csrf_token_value
+
+        # Start the JupyterHub server in a separate thread
+        start_server_thread = threading.Thread(target=self._start_server, args=(base_jhub_url, first_name, headers))
+        start_server_thread.start()
+        start_server_thread.join()  # Wait for the thread to complete
+
+        
+        data = {
+            "expires_in": 3600,
+            "note": "string",
+            "roles": [
+                "user"
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        if response.ok:
+            token = response.json().get('token')
+            return Response({'token': token, 'first_name': first_name}, status=response.status_code)
+        else:
+            return Response(response.json(), status=response.status_code)

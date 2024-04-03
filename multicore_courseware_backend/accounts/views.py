@@ -178,3 +178,12 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({"detail": "Unable to logout."}, status=status.HTTP_400_BAD_REQUEST)
 
+class UserFirstNameView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Access the first name of the authenticated user
+        first_name = request.user.first_name
+        
+        # Return the first name in the response
+        return Response({"first_name": first_name})

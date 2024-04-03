@@ -1,13 +1,57 @@
 import React from 'react';
 import { Container, Row, Col, Form, Button } from 'react-bootstrap';
+import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
 
 const PaymentScreen = () => {
+
+    const baseUrl = process.env.REACT_APP_API_BASE_URL;
+
+    const navigate = useNavigate();
+    const { courseId } = useParams();
+
+    // Function to handle course enrollment
+    const handleSubmit = () => {
+        // Redirect to the enrollment page for the selected course
+        fetchEnroll();
+        navigate(`/home`); // Pass courseId to the enrollment page
+    };
+
+    const fetchEnroll = async () => {
+        try {
+            // Retrieve access token from local storage
+            const accessToken = localStorage.getItem('access_token');
+
+            // Check if access token exists
+            if (!accessToken) {
+                console.error('Access token not found in local storage');
+                return;
+            }
+
+            // Set the authorization header with the access token
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`
+            };
+
+            const body = {
+                "course": courseId
+            };
+
+            // Make the HTTP request with the authorization header and the request body
+            const response = await axios.post(`${baseUrl}/courses/enrollments-create/`, body, { headers });
+            console.log(response.data);
+        } catch (error) {
+            console.error('Error enrolling in course:', error);
+        }
+    };
+
+
     return (
         <Container className="py-5">
             <Row className="justify-content-center">
                 <Col xs={12} md={8} lg={6}>
                     <h2 className="text-center mb-4">Secure Payment Gateway</h2>
-                    <Form>
+                    <Form onSubmit={handleSubmit}>
                         <Form.Group controlId="cardNumber">
                             <Form.Label>Card Number</Form.Label>
                             <Form.Control type="text" placeholder="Enter card number" />

@@ -13,6 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import requests
 # Create your views here.
+import os
+
+base_jhub_url = os.environ.get('BASE_JHUB_URL')
+jhub_admin_token = os.environ.get('JHUB_ADMIN_TOKEN')
 
 
 ## util function to help upload notebook to server
@@ -34,15 +38,15 @@ def encode_file_to_base64(file_path):
         return None
 
 
-def notebook_upload_req(encoded_string, token):
-    url = 'http://192.168.56.3/user/shamshad/api/contents/your_notebook.ipynb'
+def notebook_upload_req(encoded_string, token, username):
+    url = f"{base_jhub_url}/user/{username}/api/contents/your_notebook.ipynb"
     headers = {
         'Authorization': f"token {token}",
         'Content-Type': 'application/json',
     }
 
     # Get CSRF token from the Django server
-    csrf_token = requests.get('http://192.168.56.3')
+    csrf_token = requests.get(f"{base_jhub_url}")
     csrf_token_value = csrf_token.cookies.get('_xsrf')
 
     # Include CSRF token in headers
@@ -67,7 +71,7 @@ def uploadNotebook(username):
     # Extracting token from the request header
 
     ## encoded data
-    token = "a59b90543f0a4546b083feef028883ed"
+    token = f"{jhub_admin_token}"
     file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
     encoded_string = encode_file_to_base64(file_path)
     if encoded_string:
@@ -82,7 +86,7 @@ class UploadNotebookAPIView(APIView):
         
 
         ## encoded data
-        token = "a59b90543f0a4546b083feef028883ed"
+        token = f"{jhub_admin_token}"
         file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
         encoded_string = encode_file_to_base64(file_path)
         if encoded_string:
@@ -98,7 +102,7 @@ class UploadNotebookAPIView(APIView):
 @csrf_exempt
 def get_cookies(request):
     # URL of the webpage
-    url = 'http://192.168.56.3/hub/login?next='
+    url = f'{base_jhub_url}/hub/login?next='
 
     # Create ChromeOptions object to configure the WebDriver
     options = ChromeOptions()
@@ -156,7 +160,7 @@ class GetCookiesAPIView(APIView):
 class GetCorsAPIView(APIView): 
     def get(self, request):
         # Assuming you have obtained the CSRF token value somehow
-        csrf_token = requests.get('http://192.168.56.3/csrf')
+        csrf_token = requests.get(f'{base_jhub_url}/csrf')
         csrf_token_value = csrf_token.cookies.get('_xsrf')
         print(csrf_token_value)
 
@@ -175,12 +179,12 @@ def createJhubUser(username) :
     }
 
     # Define the URL
-    url = "http://192.168.56.3/hub/api/users"
+    url = f"{base_jhub_url}/hub/api/users"
 
     # Define headers with CSRF token
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "token a59b90543f0a4546b083feef028883ed"  # Replace YOUR_CSRF_TOKEN_HERE with your CSRF token
+        "Authorization": f"token {jhub_admin_token}"  # Replace YOUR_CSRF_TOKEN_HERE with your CSRF token
     }
 
     # Make the POST request

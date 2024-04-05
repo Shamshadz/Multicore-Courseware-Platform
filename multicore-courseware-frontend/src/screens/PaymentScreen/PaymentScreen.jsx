@@ -2,15 +2,21 @@ import React from 'react';
 import { Container, Row, Col, Form, Button } from 'react-bootstrap';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
 
 const PaymentScreen = () => {
 
     const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
-    const navigate = useNavigate();
     const { courseId } = useParams();
 
+    const { accessToken } = useSelector(
+        state => state.auth
+    );
+
     // Function to handle course enrollment
+    const navigate = useNavigate();
     const handleSubmit = () => {
         // Redirect to the enrollment page for the selected course
         fetchEnroll();
@@ -19,9 +25,6 @@ const PaymentScreen = () => {
 
     const fetchEnroll = async () => {
         try {
-            // Retrieve access token from local storage
-            const accessToken = localStorage.getItem('access_token');
-
             // Check if access token exists
             if (!accessToken) {
                 console.error('Access token not found in local storage');

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Courses from '../component/Courses.jsx';
 import axios from 'axios';
 import { Container, Row, Col } from 'react-bootstrap';
-
+import { useSelector } from 'react-redux';
 
 const Home = () => {
 
@@ -11,12 +11,13 @@ const Home = () => {
     const [courses, setCourses] = useState([]);
     const [enrolledCourses, setEnrolledCourses] = useState([]);
 
+    const { accessToken } = useSelector(
+        state => state.auth
+    );
 
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                // Retrieve access token from local storage
-                const accessToken = localStorage.getItem('access_token');
 
                 // Check if access token exists
                 if (!accessToken) {
@@ -44,9 +45,6 @@ const Home = () => {
     useEffect(() => {
         const fetchEnrolledCourses = async () => {
             try {
-                // Retrieve access token from local storage
-                const accessToken = localStorage.getItem('access_token');
-
                 // Check if access token exists
                 if (!accessToken) {
                     console.error('Access token not found in local storage');

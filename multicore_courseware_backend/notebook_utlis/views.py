@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from undetected_chromedriver import Chrome, ChromeOptions
 import time
-from django.core.serializers.json import DjangoJSONEncoder
 import json
 import base64
 from rest_framework.views import APIView
@@ -13,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import requests
 import os
+from .models import CourseFile
 # Create your views here.
 
 from dotenv import load_dotenv
@@ -44,9 +44,10 @@ def encode_file_to_base64(file_path):
         print(f"An error occurred: {e}")
         return None
 
+import threading
 
-def notebook_upload_req(encoded_string, token, username):
-    url = f"{base_jhub_url}/user/{username}/api/contents/your_notebook.ipynb"
+def notebook_upload_req(encoded_string, token, username, notebook_name):
+    url = f"{base_jhub_url}/user/{username}/api/contents/{notebook_name}"
     headers = {
         'Authorization': f"token {token}",
         'Content-Type': 'application/json',
@@ -73,18 +74,37 @@ def notebook_upload_req(encoded_string, token, username):
     else:
         print("Failed to upload notebook:", response.json())
 
-
-def uploadNotebook(username):
+def uploadNotebook(username, course):
     # Extracting token from the request header
-
-    ## encoded data
     token = f"{jhub_admin_token}"
-    file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
-    encoded_string = encode_file_to_base64(file_path)
-    if encoded_string:
-        notebook_upload_req(encoded_string, token, username)
-        return True
-    return False
+    
+    # Fetch file paths related to the course from the database
+    course_files = CourseFile.objects.filter(course=course)
+
+    file_paths_and_names = []
+    for course_file in course_files:
+        # file_path = course_file.file.path  # Absolute file path
+        file_name = course_file.file.name  # Relative file path (including upload_to directory)
+        file_path = './media/' + file_name
+        file_name = file_name.split('/')[1]
+        file_paths_and_names.append((file_path, file_name))
+
+    def upload_thread(file_path, notebook_name):
+        encoded_string = encode_file_to_base64(file_path)
+        if encoded_string:
+            notebook_upload_req(encoded_string, token, username, notebook_name)
+    
+    threads = []
+    for file_path_and_file_name in file_paths_and_names:
+        thread = threading.Thread(target=upload_thread,
+                                   args=(file_path_and_file_name[0] ,file_path_and_file_name[1]))
+        threads.append(thread)
+        thread.start()
+    
+    for thread in threads:
+        thread.join()
+
+    return True
 
 
 class UploadNotebookAPIView(APIView):

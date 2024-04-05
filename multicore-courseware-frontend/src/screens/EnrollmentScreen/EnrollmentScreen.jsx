@@ -3,29 +3,30 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useState, useEffect } from "react";
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
 
 const EnrollmentScreen = () => {
-
 
   const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
   const [course, setCourse] = useState([]);
   const { courseId } = useParams();
 
-  const navigate = useNavigate();
+  const { accessToken } = useSelector(
+    state => state.auth
+  );
 
   // Function to handle course enrollment
+  const navigate = useNavigate();
   const handleEnroll = () => {
     // Redirect to the enrollment page for the selected course
-    console.log(courseId);
     navigate(`/payment/${courseId}`); // Pass courseId to the enrollment page
   };
 
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        // Retrieve access token from local storage
-        const accessToken = localStorage.getItem('access_token');
 
         // Check if access token exists
         if (!accessToken) {

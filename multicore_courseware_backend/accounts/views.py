@@ -167,7 +167,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         try:
@@ -187,3 +187,20 @@ class UserFirstNameView(APIView):
         
         # Return the first name in the response
         return Response({"first_name": first_name})
+    
+class GetUserInformationAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        
+        # Serialize the user data as needed
+        user_data = {
+            'mobile': user.mobile,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            # Add any additional fields you want to include
+        }
+        
+        return Response(user_data)

@@ -63,7 +63,7 @@ class EnrollmentCreateView(generics.CreateAPIView):
             # If exists, return a conflict response
             raise serializers.ValidationError("Enrollment already exists for this user and course.")
 
-        uploaded = uploadNotebook(username.lower())
+        uploaded = uploadNotebook(username.lower(), course)
         if uploaded :
             # Create the enrollment
             serializer.save(user=user)

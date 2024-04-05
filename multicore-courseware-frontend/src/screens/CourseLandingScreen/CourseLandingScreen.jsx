@@ -3,6 +3,8 @@ import { Container, Row, Col, Button } from 'react-bootstrap';
 import { useState, useEffect } from "react";
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
+
 
 
 const CourseLandingScreen = () => {
@@ -17,11 +19,13 @@ const CourseLandingScreen = () => {
     const [jhubToken, setJhubToken] = useState('');
     const [firstName, setFirstName] = useState('');
 
+    const { accessToken } = useSelector(
+        state => state.auth
+    );
+
     useEffect(() => {
         const fetch = async () => {
             try {
-                // Retrieve access token from local storage
-                const accessToken = localStorage.getItem('access_token');
 
                 // Check if access token exists
                 if (!accessToken) {
@@ -55,9 +59,6 @@ const CourseLandingScreen = () => {
         const fetchCourses = async () => {
             try {
 
-                // Retrieve access token from local storage
-                const accessToken = localStorage.getItem('access_token');
-
                 // Check if access token exists
                 if (!accessToken) {
                     console.error('Access token not found in local storage');
@@ -85,9 +86,6 @@ const CourseLandingScreen = () => {
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-
-                // Retrieve access token from local storage
-                const accessToken = localStorage.getItem('access_token');
 
                 // Check if access token exists
                 if (!accessToken) {

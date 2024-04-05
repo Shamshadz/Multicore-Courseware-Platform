@@ -18,12 +18,12 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUpScreen />} />
 
-        <Route exact path='/' element={<PrivateRoute />}>
+        {/* <Route exact path='/' element={<PrivateRoute />}>
           <Route exact path="/logout" element={<Logout />} />
         </Route>
 
         <Route exact path='/' element={<PrivateRoute />}>
-          <Route exact path='/home' element={<Home />} />
+          <Route exact path='/' element={<Home />} />
         </Route>
 
         <Route exact path='/' element={<PrivateRoute />}>
@@ -36,7 +36,16 @@ function App() {
 
         <Route exact path='/' element={<PrivateRoute />}>
           <Route path="/course/:courseId" element={<CourseLandingScreen />} />
+        </Route> */}
+
+        <Route element={<PrivateRoute />}>
+          <Route exact path="/logout" element={<Logout />} />
+          <Route exact path='/' element={<Home />} />
+          <Route exact path="/enrollment/:courseId" element={<EnrollmentScreen />} />
+          <Route exact path="/payment/:courseId" element={<PaymentScreen />} />
+          <Route path="/course/:courseId" element={<CourseLandingScreen />} />
         </Route>
+
 
       </Routes>
     </BrowserRouter>

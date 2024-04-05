@@ -1,91 +1,43 @@
 import { useState, useEffect } from 'react';
 import { Container, Button, Col, Form, Row } from 'react-bootstrap';
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from 'react-redux';
+import { register } from '../../features/actions/authActions';
 
 const SignUpScreen = () => {
 
-    const baseUrl = process.env.REACT_APP_API_BASE_URL;
-    const baseJhubUrl = process.env.REACT_APP_API_BASE_JHUB_URL;
-    const jhubAdminToken = process.env.REACT_APP_API_JHUB_ADMIN_TOKEN;
+    const dispatch = useDispatch();
+    const { registered, loading } = useSelector(state => state.auth);
 
-    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        first_name: '',
+        last_name: '',
+        email: '',
+        mobile: '',
+        password: '',
+        confirmPassword: '',
+        otp: '',
+    });
 
+    const { first_name, last_name, email, mobile, password, confirmPassword, otp } = formData;
 
+    const onChange = e => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [mobile, setMobile] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [otp, setOtp] = useState('');
-
-    // Validation states
-    const [firstNameValid, setFirstNameValid] = useState(true);
-    const [lastNameValid, setLastNameValid] = useState(true);
-    const [emailValid, setEmailValid] = useState(true);
-    const [mobileValid, setMobileValid] = useState(true);
-    const [passwordValid, setPasswordValid] = useState(true);
-    const [confirmPasswordValid, setConfirmPasswordValid] = useState(true);
-    const [otpValid, setOtpValid] = useState(true);
-
-    // Function to handle form submission
-    const handleSubmit = async (e) => {
+    const onSubmit = e => {
         e.preventDefault();
 
-        // Perform form validation here
-
-        // If all fields are valid, submit the form
-        if (firstNameValid && lastNameValid && emailValid && mobileValid && passwordValid && confirmPasswordValid && otpValid) {
-            // Submit the form
-            const formData = {
-                first_name: firstName,
-                last_name: lastName,
-                email: email,
-                mobile: mobile,
-                password: password,
-                otp: otp,
-                otp_token: "k6vj53uo8tb5ruh4b9t32o(bkcewvxuoj*xr(5-2unua_o(gee",
-                country_code: "91"
-            };
-
-            try {
-                const response = await axios.post(
-                    `${baseUrl}/accounts/sign-up/`,
-                    formData,
-                    {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                    }
-                );
-
-                // If the request is successful, redirect to the home page
-                if (response.status === 201) {
-                    const responseData = response.data; // Get the response data
-
-                    console.log('Form submitted successfully!');
-
-                    // Initialize the access & refresh token in localstorage.      
-                    localStorage.clear();
-                    localStorage.setItem('access_token', responseData.access_token);
-                    localStorage.setItem('refresh_token', responseData.refresh_token);
-                    axios.defaults.headers.common['Authorization'] =
-                        `Bearer ${responseData.access}`;
-
-                    window.location.href = '/home';
-                    navigate('/');
-                }
-            } catch (error) {
-                console.error('Error creating user:', error);
-                // Handle error (e.g., display error message)
-            }
-
-        } else {
-            console.log('Form validation failed. Please check your inputs.');
-        }
+        dispatch(register({ first_name, last_name, email, mobile, password, otp }));
     };
+
+    const navigate = useNavigate();
+    useEffect(() => {
+        // Redirect if isAuthenticated is true
+        if (registered) {
+            navigate('/');
+        }
+    }, [registered, navigate]);
 
 
     // Function to validate email format
@@ -114,20 +66,16 @@ const SignUpScreen = () => {
 
     return (
         <Container>
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={onSubmit}>
                 <Row className="mb-3">
                     <Form.Group as={Col} controlId="formGridFirstName">
                         <Form.Label>First Name</Form.Label>
                         <Form.Control
                             type="text"
                             placeholder="First Name"
-                            value={firstName}
-                            onChange={(e) => {
-                                setFirstName(e.target.value);
-                                setFirstNameValid(true); // Reset validation on change
-                            }}
-                            isValid={firstNameValid}
-                            isInvalid={!firstNameValid}
+                            name="first_name"
+                            value={first_name}
+                            onChange={onChange}
                         />
                     </Form.Group>
 
@@ -136,13 +84,10 @@ const SignUpScreen = () => {
                         <Form.Control
                             type="text"
                             placeholder="Last Name"
-                            value={lastName}
-                            onChange={(e) => {
-                                setLastName(e.target.value);
-                                setLastNameValid(true); // Reset validation on change
-                            }}
-                            isValid={lastNameValid}
-                            isInvalid={!lastNameValid}
+                            name="last_name"
+                            value={last_name}
+                            onChange={onChange}
+
                         />
                     </Form.Group>
                 </Row>
@@ -153,13 +98,10 @@ const SignUpScreen = () => {
                         <Form.Control
                             type="email"
                             placeholder="Enter email"
+                            name="email"
                             value={email}
-                            onChange={(e) => {
-                                setEmail(e.target.value);
-                                setEmailValid(true); // Reset validation on change
-                            }}
-                            isValid={emailValid}
-                            isInvalid={!emailValid}
+                            onChange={onChange}
+
                         />
                     </Form.Group>
 
@@ -168,13 +110,10 @@ const SignUpScreen = () => {
                         <Form.Control
                             type="tel"
                             placeholder="Enter Phone Number"
+                            name="mobile"
                             value={mobile}
-                            onChange={(e) => {
-                                setMobile(e.target.value);
-                                setMobileValid(true); // Reset validation on change
-                            }}
-                            isValid={mobileValid}
-                            isInvalid={!mobileValid}
+                            onChange={onChange}
+
                         />
                     </Form.Group>
                 </Row>
@@ -185,13 +124,10 @@ const SignUpScreen = () => {
                         <Form.Control
                             type="password"
                             placeholder="Password"
+                            name="password"
                             value={password}
-                            onChange={(e) => {
-                                setPassword(e.target.value);
-                                setPasswordValid(true); // Reset validation on change
-                            }}
-                            isValid={passwordValid}
-                            isInvalid={!passwordValid}
+                            onChange={onChange}
+
                         />
                     </Form.Group>
 
@@ -200,13 +136,10 @@ const SignUpScreen = () => {
                         <Form.Control
                             type="password"
                             placeholder="Confirm Password"
+                            name="confirmPassword"
                             value={confirmPassword}
-                            onChange={(e) => {
-                                setConfirmPassword(e.target.value);
-                                setConfirmPasswordValid(true); // Reset validation on change
-                            }}
-                            isValid={confirmPasswordValid}
-                            isInvalid={!confirmPasswordValid}
+                            onChange={onChange}
+
                         />
                     </Form.Group>
                 </Row>
@@ -217,13 +150,10 @@ const SignUpScreen = () => {
                         <Form.Control
                             type="tel"
                             placeholder="Enter OTP"
+                            name="otp"
                             value={otp}
-                            onChange={(e) => {
-                                setOtp(e.target.value);
-                                setOtpValid(true); // Reset validation on change
-                            }}
-                            isValid={otpValid}
-                            isInvalid={!otpValid}
+                            onChange={onChange}
+
                         />
                     </Form.Group>
 
@@ -233,9 +163,15 @@ const SignUpScreen = () => {
 
                 </Row>
 
-                <Button variant="primary" type="submit">
-                    Submit
-                </Button>
+                {loading ? (
+                    <Button variant="primary" type="submit">
+                        Loading...
+                    </Button>
+                ) : (
+                    <Button variant="primary" type="submit">
+                        SignUp
+                    </Button>
+                )}
 
             </Form>
         </Container>

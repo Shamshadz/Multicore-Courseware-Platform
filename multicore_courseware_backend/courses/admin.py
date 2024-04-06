@@ -19,8 +19,8 @@ class UserCourseProgressAdmin(admin.ModelAdmin):
 
 @admin.register(UserCourseContentProgress)
 class UserCourseContentProgressAdmin(admin.ModelAdmin):
-    list_display = ['user', 'course_content', 'completed']
-    list_filter = ['user', 'course_content', 'completed']
+    list_display = ['user', 'course', 'course_content', 'completed']
+    list_filter = ['user', 'course', 'course_content', 'completed']
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
@@ -29,5 +29,5 @@ class EnrollmentAdmin(admin.ModelAdmin):
 
 @admin.register(Certificate)
 class CertificateAdmin(admin.ModelAdmin):
-    list_display = ['user', 'course', 'date_issued']
+    list_display = ['user', 'course', 'certificate_image', 'date_issued']
     list_filter = ['user', 'course']

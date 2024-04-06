@@ -20,7 +20,7 @@ const PaymentScreen = () => {
     const handleSubmit = () => {
         // Redirect to the enrollment page for the selected course
         fetchEnroll();
-        navigate(`/home`); // Pass courseId to the enrollment page
+        navigate(`/`); // Pass courseId to the enrollment page
     };
 
     const fetchEnroll = async () => {

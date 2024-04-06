@@ -41,6 +41,7 @@ class UserCourseProgress(models.Model):
 
 class UserCourseContentProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True)
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
 
@@ -58,9 +59,9 @@ class Enrollment(models.Model):
 class Certificate(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    certificate_image = models.ImageField(upload_to='certificates/', null=True)
     date_issued = models.DateField(auto_now_add=True)
     # Add more fields as needed, such as certificate template, etc.
 
     def __str__(self):
         return f"Certificate of Completion for {self.course.title} - {self.user.username}"
-    

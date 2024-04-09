@@ -131,6 +131,7 @@ const CourseLandingScreen = () => {
 
     // Function to handle button click and mark it as visited mark the content visited or completed
     const handleButtonClick = (contentId) => {
+        console.log("Hello");
         // Check if the button is already marked as visited
         if (!visitedButtons.includes(contentId)) {
             // If not visited, add it to the visitedButtons state
@@ -163,6 +164,7 @@ const CourseLandingScreen = () => {
         };
 
         fetch();
+
     };
 
     // check is certificate is completed
@@ -263,19 +265,22 @@ const CourseLandingScreen = () => {
                     {courseContent.map((content) => (
                         <Row key={content.course_content.id} className="mb-4">
                             <Button
-                                // variant={visitedButtons.includes(content.course_content.id) ? "secondary" : "primary"} // Change variant based on visited status
                                 className="me-3"
                                 variant={content.completed ? "secondary" : "primary"}
+                                onClick={() => handleButtonClick(content.course_content.id)} // Call handleButtonClick function on button click
                             >
-                                <a
-                                    href={`${jhubBaseUrl}/user/${firstName.toLowerCase()}/notebooks/${content.course_content.content}?token=${isTokenFetched ? jhubToken : ''}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ textDecoration: 'none', color: 'inherit' }}
-                                    onClick={() => handleButtonClick(content.course_content.id)} // Call handleButtonClick function on button click
-                                >
-                                    {isTokenFetched ? content.course_content.title : "Lab is being set up..."}
-                                </a>
+                                {isTokenFetched ? (
+                                    <a
+                                        href={`${jhubBaseUrl}/user/${firstName.toLowerCase()}/notebooks/${content.course_content.content}?token=${isTokenFetched ? jhubToken : ''}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ textDecoration: 'none', color: 'inherit' }}
+                                    >
+                                        {content.course_content.title}
+                                    </a>
+                                ) : (
+                                    "Lab is being set up..."
+                                )}
                             </Button>
                         </Row>
                     ))}

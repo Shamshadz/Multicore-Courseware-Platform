@@ -45,6 +45,7 @@ def encode_file_to_base64(file_path):
         return None
 
 import threading
+from requests.exceptions import JSONDecodeError
 
 def notebook_upload_req(encoded_string, token, username, notebook_name):
     url = f"{base_jhub_url}/user/{username}/api/contents/{notebook_name}"
@@ -68,15 +69,45 @@ def notebook_upload_req(encoded_string, token, username, notebook_name):
         "path": ""
     }
 
-    response = requests.put(url, headers=headers, json=data)
-    if response.ok:
-        print("Notebook uploaded successfully.")
-    else:
-        print("Failed to upload notebook:", response.json())
+    try:
+        response = requests.put(url, headers=headers, json=data)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        if response.ok:
+            print("Notebook uploaded successfully.")
+        else:
+            print("Failed to upload notebook:", response.json())
+    except JSONDecodeError as e:
+        print("JSON decoding error occurred:", str(e))
+        print("Response content:", response.content)
+    except requests.exceptions.RequestException as e:
+        print("Request error occurred:", str(e))
+        # Handle other request-related errors here
+
+def _start_server(base_jhub_url, first_name, headers):
+    start_server_response = requests.post(f"{base_jhub_url}/hub/api/users/{first_name}/server", headers=headers)
+    return start_server_response
 
 def uploadNotebook(username, course):
     # Extracting token from the request header
     token = f"{jhub_admin_token}"
+
+    headers = {
+        'Authorization': f"token {jhub_admin_token}",
+        'Content-Type': 'application/json',
+    }
+
+    # Fetch CSRF token from Django server
+    csrf_token = requests.get(f"{base_jhub_url}/get-csrf-token/")
+    csrf_token_value = csrf_token.cookies.get('_xsrf')
+
+    # Include CSRF token in headers
+    headers['_xsrf'] = csrf_token_value
+
+    # Start the JupyterHub server in a separate thread
+    start_server_thread = threading.Thread(target=_start_server, args=(base_jhub_url, username, headers))
+    start_server_thread.start()
+    start_server_thread.join()  # Wait for the thread to complete
+
     
     # Fetch file paths related to the course from the database
     course_files = CourseFile.objects.filter(course=course)
@@ -114,11 +145,28 @@ class UploadNotebookAPIView(APIView):
         # Extracting token from the request header
         user = self.request.user
         username = user.first_name.lower()
-        print(username)
 
         ## encoded data
         token = f"{jhub_admin_token}"
-        print(token)
+
+        headers = {
+            'Authorization': f"token {jhub_admin_token}",
+            'Content-Type': 'application/json',
+        }
+
+        # Fetch CSRF token from Django server
+        csrf_token = requests.get(f"{base_jhub_url}/get-csrf-token/")
+        csrf_token_value = csrf_token.cookies.get('_xsrf')
+
+        # Include CSRF token in headers
+        headers['_xsrf'] = csrf_token_value
+
+        # Start the JupyterHub server in a separate thread
+        start_server_thread = threading.Thread(target=_start_server, args=(base_jhub_url, username, headers))
+        start_server_thread.start()
+        start_server_thread.join()  # Wait for the thread to complete
+
+        
         file_path = "./notebooks/your_notebook.ipynb"  # Update with the path to your file
         encoded_string = encode_file_to_base64(file_path)
         if encoded_string:

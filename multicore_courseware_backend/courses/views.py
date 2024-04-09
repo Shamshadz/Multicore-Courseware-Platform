@@ -84,6 +84,7 @@ class EnrollmentCreateView(generics.CreateAPIView):
             # Create the enrollment
             serializer.save(user=user)
 
+from django.db.models import Q
 
 class EnrollmentListDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -284,11 +285,13 @@ class CourseProgressView(APIView):
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
     def post(self, request, course_id):
         try:
             user = request.user
-                
+            
+            # Check if the course exists
+            course = Course.objects.get(pk=course_id)
+
             # Get all course content progress for the given user and course
             course_content_progress = UserCourseContentProgress.objects.filter(
                 user=user,
@@ -300,32 +303,30 @@ class CourseProgressView(APIView):
             
             if all_completed:
                 # Mark course as completed
-                course = Course.objects.get(pk=course_id)
                 course_progress, created = UserCourseProgress.objects.get_or_create(
-                                                user=user,
-                                                course=course,
-                                                completed=True
-                                            )
+                    user=user,
+                    course=course,
+                    completed=True
+                )
                 serializer = UserCourseProgressSerializer(course_progress)
 
                 # Generate Certificate
-                if created:
-                    course_name = course.title
-                    certificate_path = generate_certificate(user.first_name, course_name)
+                course_name = course.title
+                certificate_path = generate_certificate(user.first_name, course_name)
 
-                    if certificate_path:
-                        # Save certificate information to the database
-                        certificate = Certificate.objects.create(
-                            user=user,
-                            course=course,
-                            certificate_image=certificate_path
-                        )
-                    else:
-                        # Certificate generation failed
-                        return Response({
-                            "status": "error",
-                            "message": "Failed to generate certificate"
-                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                if certificate_path:
+                    # Save certificate information to the database
+                    certificate = Certificate.objects.create(
+                        user=user,
+                        course=course,
+                        certificate_image=certificate_path
+                    )
+                else:
+                    # Certificate generation failed
+                    return Response({
+                        "status": "error",
+                        "message": "Failed to generate certificate"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
                 return Response({
                     "status": "success",
@@ -349,7 +350,7 @@ class CourseProgressView(APIView):
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        
+                
 
 import os
 import cv2

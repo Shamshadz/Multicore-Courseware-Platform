@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 
 User = get_user_model()
@@ -65,3 +66,17 @@ class Certificate(models.Model):
 
     def __str__(self):
         return f"Certificate of Completion for {self.course.title} - {self.user.username}"
+
+    class Meta:
+        # Ensure that each user can only have one certificate for each course
+        unique_together = ('user', 'course')
+
+    def clean(self):
+        # Check if a certificate already exists for the user and course
+        existing_certificates = Certificate.objects.filter(
+            user=self.user,
+            course=self.course
+        ).exclude(pk=self.pk)  # Exclude current instance if editing
+        
+        if existing_certificates.exists():
+            raise ValidationError('A certificate already exists for this user and course.')

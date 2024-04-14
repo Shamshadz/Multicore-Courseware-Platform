@@ -77,6 +77,7 @@ const PaymentScreen = () => {
                             <Form.Label>Card Holder Name</Form.Label>
                             <Form.Control type="text" placeholder="Enter card holder name" />
                         </Form.Group>
+                        <br />
                         <Button variant="primary" type="submit" block>
                             Pay Now
                         </Button>

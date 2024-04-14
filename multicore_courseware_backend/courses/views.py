@@ -170,11 +170,23 @@ class CourseContentProgressView(APIView):
                     "course_content": CourseContentSerializer(progress.course_content).data
                 })
 
+                # Get all course content progress for the given user and course
+                course_content_progress = UserCourseContentProgress.objects.filter(
+                    user=user,
+                    course_content__course_id=course_id
+                )
+
+                # Check if all course content progress instances are completed
+                all_completed = all(progress.completed for progress in course_content_progress)
+            
+
+
             # Return success response with serialized data
             return Response({
                 "status": "success",
                 "message": "Course content and progress retrieved successfully",
-                "course_content_progress": progress_data
+                "course_content_progress": progress_data,
+                "course_completed": all_completed
             })
 
         except PermissionDenied as e:
@@ -215,6 +227,7 @@ class CourseContentProgressView(APIView):
                 # Serialize the updated progress
                 serializer = UserCourseContentProgressSerializer(course_content_progress)
 
+                
                 # Return success response
                 return Response({
                     "status": "success",
@@ -310,29 +323,39 @@ class CourseProgressView(APIView):
                 )
                 serializer = UserCourseProgressSerializer(course_progress)
 
-                # Generate Certificate
-                course_name = course.title
-                certificate_path = generate_certificate(user.first_name, course_name)
+                if created:
+                
+                    # Generate Certificate
+                    course_name = course.title
+                    certificate_path = generate_certificate(user.first_name, course_name)
 
-                if certificate_path:
-                    # Save certificate information to the database
-                    certificate = Certificate.objects.create(
-                        user=user,
-                        course=course,
-                        certificate_image=certificate_path
-                    )
-                else:
-                    # Certificate generation failed
+                    if certificate_path:
+                        # Save certificate information to the database
+                        certificate = Certificate.objects.get_or_create(
+                            user=user,
+                            course=course,
+                            certificate_image=certificate_path
+                        )
+                    else:
+                        # Certificate generation failed
+                        return Response({
+                            "status": "error",
+                            "message": "Failed to generate certificate"
+                        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
                     return Response({
-                        "status": "error",
-                        "message": "Failed to generate certificate"
-                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        "status": "success",
+                        "message": "Course marked as completed",
+                        "data": serializer.data
+                    })
+                
+                else:
+                    return Response({
+                        "status": "success",
+                        "message": "Course already completed",
+                        "data": serializer.data
+                    }, status=status.HTTP_200_OK)
 
-                return Response({
-                    "status": "success",
-                    "message": "Course marked as completed",
-                    "data": serializer.data
-                })
             else:
                 return Response({
                     "status": "success",
@@ -387,6 +410,9 @@ def generate_certificate(name, course_name):
     except Exception as e:
         print(f"Error generating certificate: {e}")
         return None
+    
+
+
     
 class CertificateRetrieveAPIView(generics.RetrieveAPIView):
     serializer_class = CertificateSerializer

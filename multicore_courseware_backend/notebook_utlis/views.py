@@ -111,6 +111,7 @@ def uploadNotebook(username, course):
     
     # Fetch file paths related to the course from the database
     course_files = CourseFile.objects.filter(course=course)
+    print(course_files)
 
     file_paths_and_names = []
     for course_file in course_files:

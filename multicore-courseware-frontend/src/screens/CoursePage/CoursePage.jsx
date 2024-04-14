@@ -1,117 +1,81 @@
-import React, { useState } from "react";
-import FormContainer from "../../components/FormContainer";
-import { Form, Carousel } from "react-bootstrap";
-import queryString from "query-string";
-import { useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
-import { ThreeDots } from "react-loader-spinner";
-import { toast } from "react-toastify";
+import React from "react";
+import { motion } from "framer-motion";
 
-function CoursePage() {
-    const [isLoading, setisLoading] = useState(false);
-    const location = useLocation();
-    const { githuburl, coursetitle } = queryString.parse(location.search);
-    const userInfo = useSelector((state) => state.auth);
-    console.log(userInfo.userInfo._id);
-    const [link, setLink] = useState("");
-
-    const saveLinkToUserCourses = async () => {
-        try {
-            // console.log("Mein run hua");
-            setisLoading(true);
-            const response = await fetch(
-                "http://localhost:5001/api/users/add-course-url",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        userId: userInfo.userInfo._id, // You need to replace this with the actual userId
-                        courseName: coursetitle,
-                        courseUrl: link,
-                    }),
-                }
-            );
-            setisLoading(false);
-
-            if (!response.ok) {
-                throw new Error("Failed to save link");
-            }
-
-            // Optionally, you can show a success message or perform other actions here
-            console.log("Link saved successfully");
-            toast.success("Link Saved Successfully!!!");
-            setLink("");
-        } catch (error) {
-            console.error("Error saving link:", error);
-        }
-    };
-
+const CoursePage = () => {
     return (
-        <div>
-            <FormContainer>
-                <p className=" font-semibold">
-                    Click the button below to download the Notebook from GitHub
-                </p>
-                <a
-                    href="https://mybinder.org/v2/gh/Shamshadz/binder-repo-1/HEAD"
-                    target="_blank"
-                    className="hover:bg-blue-400  justify-center items-center flex transition-all duration-300 no-underline cursor-pointer py-2 px-5 bg-blue-600 rounded-md font-semibold text-white"
-                >
-                    Click Here
-                </a>
-                <Form.Group className="my-4" controlId="password">
-                    <Form.Label className=" font-semibold">
-                        Enter your Notebook's Public Link
-                    </Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Enter Public Link"
-                        value={link}
-                        onChange={(e) => setLink(e.target.value)}
-                    />
-                </Form.Group>
-                <button
-                    onClick={saveLinkToUserCourses}
-                    className="hover:bg-blue-400 transition-all duration-300 no-underline cursor-pointer py-2 px-5 bg-blue-600 rounded-md font-semibold text-white"
-                >
-                    {isLoading ? (
-                        <div className="flex justify-center">
-                            <ThreeDots
-                                visible={true}
-                                height={21}
-                                width={50}
-                                color="#ffffff"
-                                radius={9}
-                                ariaLabel="three-dots-loading"
-                                wrapperStyle={{}}
-                                wrapperClass=""
+        <div className="bg-gray-100 min-h-screen">
+            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {/* Course Image */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="bg-white rounded-lg shadow-lg overflow-hidden"
+                    >
+                        <img
+                            src="https://via.placeholder.com/500x300"
+                            alt="Course"
+                            className="w-full h-48 object-cover"
+                        />
+                    </motion.div>
+
+                    {/* Course Introduction */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7, delay: 0.2 }}
+                        className="bg-white rounded-lg shadow-lg p-6"
+                    >
+                        <h2 className="text-2xl font-bold mb-4">Course Introduction</h2>
+                        <p className="text-gray-700 leading-relaxed">
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                            euismod nisi vel mauris congue, vel facilisis velit facilisis.
+                        </p>
+                    </motion.div>
+
+                    {/* Tutor Details */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7, delay: 0.4 }}
+                        className="bg-white rounded-lg shadow-lg p-6"
+                    >
+                        <h2 className="text-2xl font-bold mb-4">Tutor Details</h2>
+                        <div className="flex items-center">
+                            <img
+                                src="https://via.placeholder.com/64"
+                                alt="Tutor"
+                                className="w-16 h-16 rounded-full mr-4"
                             />
+                            <div>
+                                <h3 className="text-lg font-bold">John Doe</h3>
+                                <p className="text-gray-700">Senior Instructor</p>
+                            </div>
                         </div>
-                    ) : (
-                        "Submit"
-                    )}
-                </button>
-            </FormContainer>
-            <div className="mt-5">
-                <h3>References:</h3>
-                <ul>
-                    <li>
-                        <a href="https://www.open-mpi.org/doc/" target="_blank">
-                            Reference 1
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#">Reference 2</a>
-                    </li>
-                    <li>
-                        <a href="#">Reference 3</a>
-                    </li>
-                </ul>
+                    </motion.div>
+                </div>
+
+                {/* Other Labs and Related Information */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.7, delay: 0.6 }}
+                    className="mt-8 bg-white rounded-lg shadow-lg p-6"
+                >
+                    <h2 className="text-2xl font-bold mb-4">
+                        Other Labs and Related Information
+                    </h2>
+                    <ul className="list-disc pl-4">
+                        <li>Lab 1: Introduction to Programming</li>
+                        <li>Lab 2: Data Structures and Algorithms</li>
+                        <li>Lab 3: Web Development Fundamentals</li>
+                        {/* Add more labs or related information */}
+                    </ul>
+                </motion.div>
             </div>
         </div>
     );
-}
+};
 
 export default CoursePage;

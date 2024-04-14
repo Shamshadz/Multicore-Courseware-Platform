@@ -12,7 +12,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 import requests
 import os
+from django.core.serializers import serialize
 from .models import CourseFile
+from courses.models import CourseContent
+import nbformat
+from nbconvert.preprocessors import ExecutePreprocessor
+
 # Create your views here.
 
 from dotenv import load_dotenv
@@ -111,7 +116,7 @@ def uploadNotebook(username, course):
     
     # Fetch file paths related to the course from the database
     course_files = CourseFile.objects.filter(course=course)
-    print(course_files)
+    course_contents = CourseContent.objects.filter(course=course)
 
     file_paths_and_names = []
     for course_file in course_files:
@@ -120,6 +125,13 @@ def uploadNotebook(username, course):
         file_path = './media/' + file_name
         file_name = file_name.split('/')[1]
         file_paths_and_names.append((file_path, file_name))
+
+    for course_content in course_contents:
+        if course_content.any_file:  # Check if any_file is present
+            file_path = './media/' + course_content.any_file.name
+            file_name = course_content.any_file.name.split('/')[-1]  # Extracting file name
+            file_paths_and_names.append((file_path, file_name))
+
 
     def upload_thread(file_path, notebook_name):
         encoded_string = encode_file_to_base64(file_path)
@@ -327,3 +339,120 @@ class GetJhubUserTokenView(APIView):
             return Response({'token': token, 'first_name': first_name}, status=response.status_code)
         else:
             return Response(response.json(), status=response.status_code)
+        
+
+class GradeAssessment(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        data = request.data
+
+        notebook_name = data['notebook_name']
+        course_id = data['course_id']
+        course_content_id = data['course_content_id']
+
+        username = request.user.first_name.lower()
+        
+        # res = self.get_test_assessment_book(username, notebook_name)
+        res = self.get_answer_assessment_notebook(username=username,
+                                                   notebook_name=notebook_name,
+                                                   course_id=course_id,
+                                                   course_content_id=course_content_id)
+
+        return Response(res)
+
+
+    def _start_server(self, base_jhub_url, first_name, headers):
+        start_server_response = requests.post(f"{base_jhub_url}/hub/api/users/{first_name}/server", headers=headers)
+        return start_server_response
+
+    def get_test_assessment_book(self, username, notebook_name):
+
+        headers = {
+            'Authorization': f"token {jhub_admin_token}",
+            'Content-Type': 'application/json',
+        }
+
+        # Fetch CSRF token from Django server
+        csrf_token = requests.get(f"{base_jhub_url}/get-csrf-token/")
+        csrf_token_value = csrf_token.cookies.get('_xsrf')
+
+        # Include CSRF token in headers
+        headers['_xsrf'] = csrf_token_value
+
+        # Start the JupyterHub server in a separate thread
+        start_server_thread = threading.Thread(target=self._start_server, args=(base_jhub_url, username, headers))
+        start_server_thread.start()
+        start_server_thread.join()  # Wait for the thread to complete
+
+        url = f"{base_jhub_url}/user/{username.lower()}/api/contents/{notebook_name}?type=notebook&content=1&hash=1"
+
+        response = requests.get(url, headers=headers)
+        
+        return response
+        
+    def get_answer_assessment_notebook(self, username, notebook_name, course_id, course_content_id):
+
+        course_content = CourseContent.objects.get(pk = course_content_id)
+
+
+        path_of_assessment_file = course_content.assessment_answer_file
+        
+        return path_of_assessment_file
+    
+
+    def compare_notebook_output(username, notebook_name, course_id, course_content_id):
+        # Get the path of the assessment notebook file from the database
+        course_content = CourseContent.objects.get(pk=course_content_id)
+        notebook_path = course_content.assessment_answer_file
+
+        # Execute the notebook
+        executed_notebook_path = execute_jupyter_notebook(notebook_path)
+
+        # Load the executed notebook
+        with open(executed_notebook_path, 'r', encoding='utf-8') as f:
+            executed_notebook = nbformat.read(f, as_version=4)
+
+        # Get the notebook content from the response
+        response_notebook_content = get_notebook_content(username, notebook_name, course_id, course_content_id)
+
+        # Compare the outputs
+        notebook_outputs = get_notebook_outputs(executed_notebook)
+        response_outputs = get_notebook_outputs(response_notebook_content)
+
+        return notebook_outputs == response_outputs
+
+    def execute_jupyter_notebook(notebook_path):
+        # Load the notebook
+        with open(notebook_path) as f:
+            nb = nbformat.read(f, as_version=4)
+
+        # Execute the notebook
+        executor = ExecutePreprocessor(timeout=None)
+        executor.preprocess(nb, {'metadata': {'path': os.path.dirname(notebook_path)}})
+
+        # Save the executed notebook
+        executed_notebook_path = os.path.splitext(notebook_path)[0] + '_executed.ipynb'
+        with open(executed_notebook_path, 'w', encoding='utf-8') as f:
+            nbformat.write(nb, f)
+
+        return executed_notebook_path
+
+    def get_notebook_content(username, notebook_name, course_id, course_content_id):
+        # Make a request to get the notebook content
+        # Adjust this according to your API or request method
+        response = requests.get(f"url/to/get/notebook/content/{username}/{notebook_name}/{course_id}/{course_content_id}")
+
+        # Assuming the content is in JSON format
+        notebook_content = response.json()
+
+        return notebook_content
+
+    def get_notebook_outputs(notebook):
+        # Extract outputs from notebook
+        outputs = []
+        for cell in notebook['cells']:
+            if cell['cell_type'] == 'code' and 'outputs' in cell:
+                outputs.extend([output['data'] for output in cell['outputs'] if 'data' in output])
+        return outputs

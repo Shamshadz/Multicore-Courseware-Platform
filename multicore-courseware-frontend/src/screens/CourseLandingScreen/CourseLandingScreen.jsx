@@ -123,6 +123,7 @@ const CourseLandingScreen = () => {
                 // const response = await axios.get(`${baseUrl}/courses/${courseId}/content/`, { headers });
                 const response = await axios.get(`${baseUrl}/courses/get-course/${courseId}/contents/progress/`, { headers });
 
+                console.log(response.data.course_content_progress)
                 setCourseContent(response.data.course_content_progress);
 
                 const courseCompleted = response.data.course_completed;
@@ -261,6 +262,30 @@ const CourseLandingScreen = () => {
         fetch();
     }
 
+    const handleCertificateDownload = async () => {
+        try {
+            const response = await fetch(courseCertificate.certificate_image);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${course.title}_certificate_image.png`;
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading image:', error);
+        }
+    };
+
+    const handleAssessmentSubmit = () => {
+        return;
+    }
+
     return (
         <>
             <div className="bg-gray-100 min-h-screen">
@@ -362,6 +387,17 @@ const CourseLandingScreen = () => {
                                     )}
                                 </Button>
 
+                                <Col className="mt-4 d-flex justify-content-center">
+                                    {content.course_content.content_type === "ASSESSMENT" && (
+                                        <Button
+                                            variant="info" // Adjust the variant according to your design
+                                            onClick={() => handleAssessmentSubmit(content.course_content.id)} // Define the handleAssessmentSubmit function
+                                        >
+                                            Submit
+                                        </Button>
+                                    )}
+                                </Col>
+
                             </Row>
                         ))}
 
@@ -384,8 +420,12 @@ const CourseLandingScreen = () => {
                                 <Button variant="secondary" onClick={() => setShowCertificateModal(false)}>
                                     Close
                                 </Button>
+                                <Button variant="primary" onClick={handleCertificateDownload}>
+                                    Download
+                                </Button>
                             </Modal.Footer>
                         </Modal>
+
 
 
                         <Row>

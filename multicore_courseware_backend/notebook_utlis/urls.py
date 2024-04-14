@@ -8,4 +8,5 @@ urlpatterns = [
     path('upload-notebook/', views.UploadNotebookAPIView.as_view(), name="upload-notebook"),
     path('get-cors/', views.GetCorsAPIView.as_view(), name="get-cors"),
     path('get-jhub-user-token/', views.GetJhubUserTokenView.as_view(), name="get-jhub-user-token"),
+    path('grade-notebook/', views.GradeAssessment.as_view(), name="grade-notebook"),
 ]

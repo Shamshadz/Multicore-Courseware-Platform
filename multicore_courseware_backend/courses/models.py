@@ -28,6 +28,8 @@ class CourseContent(models.Model):
     content_type = models.CharField(max_length=20, choices=content_type_choices)
     content = models.TextField()
     sequence_no = models.IntegerField()
+    any_file = models.FileField(upload_to='course_files/assessment_files/test_file', null=True, blank=True)  # Specify the upload path
+    assessment_answer_file = models.FileField(upload_to='course_files/assessment_files/answer_file', null=True, blank=True)
 
     def __str__(self):
         return f"{self.content_type} - {self.title}"

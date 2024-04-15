@@ -17,6 +17,10 @@ from .models import CourseFile
 from courses.models import CourseContent
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
+from io import StringIO
+import sys
+import threading
+from requests.exceptions import JSONDecodeError
 
 # Create your views here.
 
@@ -48,9 +52,6 @@ def encode_file_to_base64(file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
         return None
-
-import threading
-from requests.exceptions import JSONDecodeError
 
 def notebook_upload_req(encoded_string, token, username, notebook_name):
     url = f"{base_jhub_url}/user/{username}/api/contents/{notebook_name}"
@@ -354,13 +355,22 @@ class GradeAssessment(APIView):
 
         username = request.user.first_name.lower()
         
-        # res = self.get_test_assessment_book(username, notebook_name)
-        res = self.get_answer_assessment_notebook(username=username,
+        student_notebook_content = self.get_test_assessment_book(username, notebook_name)
+        correct_notebook_content = self.get_answer_assessment_notebook(username=username,
                                                    notebook_name=notebook_name,
                                                    course_id=course_id,
                                                    course_content_id=course_content_id)
 
-        return Response(res)
+        try:
+            assessment_result = self.assess_notebooks(student_notebook_content, correct_notebook_content)
+        except:
+            assessment_result = False
+
+        return Response({
+            "student_notebook_content" : student_notebook_content,
+            "correct_notebook_content" : correct_notebook_content, 
+            "result" : assessment_result
+        }, status=status.HTTP_200_OK)
 
 
     def _start_server(self, base_jhub_url, first_name, headers):
@@ -390,69 +400,129 @@ class GradeAssessment(APIView):
 
         response = requests.get(url, headers=headers)
         
-        return response
+        if response.status_code == 200:
+            self.create_notebook_from_response(response, "test_notebook")
+            notebook_content = response.json() # Directly parse JSON response
+            return notebook_content['content']
+        else:
+            # Handle error response
+            print(f"Failed to fetch notebook. Status code: {response.status_code}")
+            return None
         
     def get_answer_assessment_notebook(self, username, notebook_name, course_id, course_content_id):
 
-        course_content = CourseContent.objects.get(pk = course_content_id)
+        try:
+            # Assuming CourseContent model is imported properly
+            course_content = CourseContent.objects.get(pk=course_content_id)
+            
+            # Get the file path of the assessment answer notebook
+            path_of_assessment_file = course_content.assessment_answer_file
+            
+            print("##################################")
+            # path_of_assessment_file = str(path_of_assessment_file)
+            # print(path_of_assessment_file)
+            self.run_notebook_in_thread(path_of_assessment_file.path)
 
 
-        path_of_assessment_file = course_content.assessment_answer_file
-        
-        return path_of_assessment_file
+            # Read the content of the file
+            with open(path_of_assessment_file.path, 'r') as file:
+                assessment_notebook_content = file.read()
+            
+            # Parse the content if needed
+            assessment_notebook_json = json.loads(assessment_notebook_content)
+
+            
+            return assessment_notebook_json
+        except CourseContent.DoesNotExist:
+            # Handle the case where the CourseContent with the given ID does not exist
+            print("Course content does not exist.")
+            return None
+        except Exception as e:
+            # Handle any other exceptions
+            print(f"An error occurred: {e}")
+            return None
     
+    def assess_notebooks(self, student_notebook, correct_notebook):        
+            
+        for student_cell, correct_cell in zip(student_notebook['cells'], correct_notebook['cells']):
+            print("outputs of cells")
 
-    def compare_notebook_output(username, notebook_name, course_id, course_content_id):
-        # Get the path of the assessment notebook file from the database
-        course_content = CourseContent.objects.get(pk=course_content_id)
-        notebook_path = course_content.assessment_answer_file
+            student_output = student_cell.get('outputs', [])
+            correct_output = correct_cell.get('outputs', [])
 
-        # Execute the notebook
-        executed_notebook_path = execute_jupyter_notebook(notebook_path)
-
-        # Load the executed notebook
-        with open(executed_notebook_path, 'r', encoding='utf-8') as f:
-            executed_notebook = nbformat.read(f, as_version=4)
-
-        # Get the notebook content from the response
-        response_notebook_content = get_notebook_content(username, notebook_name, course_id, course_content_id)
-
-        # Compare the outputs
-        notebook_outputs = get_notebook_outputs(executed_notebook)
-        response_outputs = get_notebook_outputs(response_notebook_content)
-
-        return notebook_outputs == response_outputs
-
-    def execute_jupyter_notebook(notebook_path):
-        # Load the notebook
-        with open(notebook_path) as f:
-            nb = nbformat.read(f, as_version=4)
-
-        # Execute the notebook
-        executor = ExecutePreprocessor(timeout=None)
-        executor.preprocess(nb, {'metadata': {'path': os.path.dirname(notebook_path)}})
-
-        # Save the executed notebook
-        executed_notebook_path = os.path.splitext(notebook_path)[0] + '_executed.ipynb'
-        with open(executed_notebook_path, 'w', encoding='utf-8') as f:
-            nbformat.write(nb, f)
-
-        return executed_notebook_path
-
-    def get_notebook_content(username, notebook_name, course_id, course_content_id):
-        # Make a request to get the notebook content
-        # Adjust this according to your API or request method
-        response = requests.get(f"url/to/get/notebook/content/{username}/{notebook_name}/{course_id}/{course_content_id}")
-
-        # Assuming the content is in JSON format
+            for data in student_output:
+                student_output = data['data']
+            print(student_output)
+            print()
+            for data in correct_output:
+                correct_output = data['data']
+            print(correct_output) 
+                      
+            
+            # Check if outputs exist and compare them
+            if student_output != correct_output:
+                print("Output of a cell does not match.")
+                return False
+        
+        return True  # Return True after looping through all cells
+    
+    def create_notebook_from_response(self, response, notebook_name):
+        # Parse the JSON response to get the notebook content
         notebook_content = response.json()
 
-        return notebook_content
+        # Create a new notebook
+        nb = nbformat.v4.new_notebook()
 
-    def get_notebook_outputs(notebook):
-        # Extract outputs from notebook
-        outputs = []
-        for cell in notebook['cells']:
-            if cell['cell_type'] == 'code' and 'outputs' in cell:
-                outputs.extend([output['data'] for output in cell['outputs'] if 'data' in output])
-        return outputs
+        # Add cells from the response to the notebook
+        for cell_data in notebook_content['content']['cells']:
+            cell_type = cell_data['cell_type']
+            if cell_type == 'code':
+                cell_source = ''.join(cell_data['source'])  # Combine source lines into a single string
+                cell = nbformat.v4.new_code_cell(cell_source)
+            elif cell_type == 'markdown':
+                cell_source = ''.join(cell_data['source'])  # Combine source lines into a single string
+                cell = nbformat.v4.new_markdown_cell(cell_source)
+            else:
+                # Handle other cell types if needed
+                continue
+            
+            nb['cells'].append(cell)
+
+        # Write the notebook to a file
+        file_name = f"{notebook_name}.ipynb"
+        with open(file_name, 'w') as f:
+            nbformat.write(nb, f)
+        
+        print(f"Jupyter Notebook '{file_name}' created successfully!")
+        notebook_path = "test_notebook.ipynb"
+        self.run_notebook_in_thread(notebook_path)
+
+    def execute_notebook(self, notebook_path):
+        with open(notebook_path) as f:
+            nb = nbformat.read(f, as_version=4)
+        
+        executor = ExecutePreprocessor(timeout=None)
+    
+        try:
+            # Execute the notebook
+            result = executor.preprocess(nb, {'metadata': {'path': '.'}})
+            outputs = []
+            for cell in nb.cells:
+                if 'outputs' in cell:
+                    outputs.extend(cell['outputs'])
+            print(outputs)
+            return outputs
+        except Exception as e:
+            # Handle error during execution
+            print(f"Error executing notebook: {e}")
+            return None
+        
+
+    def run_notebook_in_thread(self, notebook_path):
+        thread = threading.Thread(target=self.execute_notebook, args=(notebook_path,))
+        thread.start()
+        thread.join()
+
+
+import asyncio
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

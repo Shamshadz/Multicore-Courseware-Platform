@@ -282,8 +282,40 @@ const CourseLandingScreen = () => {
         }
     };
 
-    const handleAssessmentSubmit = () => {
-        return;
+    const handleAssessmentSubmit = (notebook_name, course_id, course_content_id) => {
+
+        // Assess the NoteBook
+        const assess = async () => {
+            try {
+
+                // Check if access token exists
+                if (!accessToken) {
+                    console.error('Access token not found in local storage');
+                    return;
+                }
+
+                // Set the authorization header with the access token
+                const headers = {
+                    'Authorization': `Bearer ${accessToken}`
+                };
+
+                const body = {
+                    "notebook_name": notebook_name,
+                    "course_id": course_id,
+                    "course_content_id": course_content_id
+                };
+
+                // Make the HTTP request with the authorization header
+                const response = await axios.post(`${baseUrl}/notebook-utlis/grade-notebook/`, body, { headers });
+
+                console.log(response.data)
+
+            } catch (error) {
+                console.error('Error fetching courses:', error);
+            }
+        };
+
+        assess();
     }
 
     return (
@@ -391,7 +423,7 @@ const CourseLandingScreen = () => {
                                     {content.course_content.content_type === "ASSESSMENT" && (
                                         <Button
                                             variant="info" // Adjust the variant according to your design
-                                            onClick={() => handleAssessmentSubmit(content.course_content.id)} // Define the handleAssessmentSubmit function
+                                            onClick={() => handleAssessmentSubmit(content.course_content.content, course.id, content.course_content.id)} // Define the handleAssessmentSubmit function
                                         >
                                             Submit
                                         </Button>

@@ -10,25 +10,23 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-import requests
-import os
-from django.core.serializers import serialize
 from .models import CourseFile
 from courses.models import CourseContent
-import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
-from io import StringIO
-import sys
-import threading
 from requests.exceptions import JSONDecodeError
-
-# Create your views here.
-
-from dotenv import load_dotenv
+import threading
+import nbformat
+import requests
 import os
 
+# Create your views here.
 # Load environment variables from .env file
+from dotenv import load_dotenv
 load_dotenv()
+
+# for help in execution of NoteBooks
+import asyncio
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 # Retrieve the value of BASE_JHUB_URL
 base_jhub_url = os.getenv('BASE_JHUB_URL')
@@ -261,7 +259,6 @@ class GetCorsAPIView(APIView):
         return JsonResponse({'_xsrf': csrf_token_value})
     
 
-import requests
 def createJhubUser(username) :
 
     # Define the request body
@@ -292,8 +289,6 @@ def createJhubUser(username) :
         print(f"Error: {response.status_code} - {response.reason}")
         return False
     
-import threading
-
 
 class GetJhubUserTokenView(APIView):
     permission_classes = [IsAuthenticated]
@@ -345,6 +340,11 @@ class GetJhubUserTokenView(APIView):
 class GradeAssessment(APIView):
     permission_classes = [IsAuthenticated]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.test_notebook_outputs = []
+        self.correct_notebook_outputs = []
+
     def post(self, request):
 
         data = request.data
@@ -355,21 +355,19 @@ class GradeAssessment(APIView):
 
         username = request.user.first_name.lower()
         
-        student_notebook_content = self.get_test_assessment_book(username, notebook_name)
-        correct_notebook_content = self.get_answer_assessment_notebook(username=username,
+        self.get_test_assessment_book(username, notebook_name)
+        self.get_answer_assessment_notebook(username=username,
                                                    notebook_name=notebook_name,
                                                    course_id=course_id,
                                                    course_content_id=course_content_id)
 
         try:
-            assessment_result = self.assess_notebooks(student_notebook_content, correct_notebook_content)
+            assessment_result = self.assess_notebooks()
         except:
             assessment_result = False
 
         return Response({
-            "student_notebook_content" : student_notebook_content,
-            "correct_notebook_content" : correct_notebook_content, 
-            "result" : assessment_result
+            "Passed" : assessment_result
         }, status=status.HTTP_200_OK)
 
 
@@ -418,53 +416,19 @@ class GradeAssessment(APIView):
             # Get the file path of the assessment answer notebook
             path_of_assessment_file = course_content.assessment_answer_file
             
-            print("##################################")
-            # path_of_assessment_file = str(path_of_assessment_file)
-            # print(path_of_assessment_file)
-            self.run_notebook_in_thread(path_of_assessment_file.path)
+            self.run_notebook_in_thread(test_notebook=False, notebook_path=path_of_assessment_file.path)
 
-
-            # Read the content of the file
-            with open(path_of_assessment_file.path, 'r') as file:
-                assessment_notebook_content = file.read()
-            
-            # Parse the content if needed
-            assessment_notebook_json = json.loads(assessment_notebook_content)
-
-            
-            return assessment_notebook_json
+            return None
+        
         except CourseContent.DoesNotExist:
             # Handle the case where the CourseContent with the given ID does not exist
             print("Course content does not exist.")
             return None
+        
         except Exception as e:
             # Handle any other exceptions
             print(f"An error occurred: {e}")
             return None
-    
-    def assess_notebooks(self, student_notebook, correct_notebook):        
-            
-        for student_cell, correct_cell in zip(student_notebook['cells'], correct_notebook['cells']):
-            print("outputs of cells")
-
-            student_output = student_cell.get('outputs', [])
-            correct_output = correct_cell.get('outputs', [])
-
-            for data in student_output:
-                student_output = data['data']
-            print(student_output)
-            print()
-            for data in correct_output:
-                correct_output = data['data']
-            print(correct_output) 
-                      
-            
-            # Check if outputs exist and compare them
-            if student_output != correct_output:
-                print("Output of a cell does not match.")
-                return False
-        
-        return True  # Return True after looping through all cells
     
     def create_notebook_from_response(self, response, notebook_name):
         # Parse the JSON response to get the notebook content
@@ -489,40 +453,73 @@ class GradeAssessment(APIView):
             nb['cells'].append(cell)
 
         # Write the notebook to a file
-        file_name = f"{notebook_name}.ipynb"
+        file_name = f"media/course_files/create_test_notebook/{notebook_name}.ipynb"
         with open(file_name, 'w') as f:
             nbformat.write(nb, f)
         
         print(f"Jupyter Notebook '{file_name}' created successfully!")
-        notebook_path = "test_notebook.ipynb"
-        self.run_notebook_in_thread(notebook_path)
+        notebook_path = file_name
+        self.run_notebook_in_thread(test_notebook=True, notebook_path=notebook_path)
 
-    def execute_notebook(self, notebook_path):
+        return None
+    
+    def run_notebook_in_thread(self, test_notebook, notebook_path):
+        thread = threading.Thread(target=self.execute_notebook, args=(test_notebook, notebook_path,))
+        thread.start()
+        thread.join()
+
+    def execute_notebook(self, test_notebook, notebook_path):
         with open(notebook_path) as f:
             nb = nbformat.read(f, as_version=4)
         
-        executor = ExecutePreprocessor(timeout=None)
-    
+        executor = ExecutePreprocessor(timeout=1000)
+        outputs = []  # List to store outputs
+        
         try:
-            # Execute the notebook
-            result = executor.preprocess(nb, {'metadata': {'path': '.'}})
-            outputs = []
+            # Execute each cell in the notebook
             for cell in nb.cells:
-                if 'outputs' in cell:
-                    outputs.extend(cell['outputs'])
-            print(outputs)
-            return outputs
+                if cell.cell_type == 'code':  # Only execute code cells
+                    # Create a new notebook with only this cell
+                    nb_single_cell = nbformat.v4.new_notebook(cells=[cell])
+                    
+                    # Execute the code cell
+                    try:
+                        result = executor.preprocess(nb_single_cell, {'metadata': {'path': '.'}})
+                        
+                        # Collect outputs if available
+                        try:
+                            # print(result[0]['cells'][0]['outputs'])
+                            outputs.append(result[0]['cells'][0]['outputs'])
+                        except:
+                            print("no outputs")
+                    except Exception as e:
+                        # Handle specific exceptions, e.g., NameError
+                        print(f"An error occurred while executing the following cell:\n------------------\n{cell.source}\n------------------\n")
+                        print(f"Error message: {e}\n")
+            
+            if test_notebook:
+                self.test_notebook_outputs.extend(outputs)
+            else:
+                self.correct_notebook_outputs.extend(outputs)
+                
+            return None
+        
         except Exception as e:
             # Handle error during execution
             print(f"Error executing notebook: {e}")
             return None
+
+    def assess_notebooks(self):        
+            
+        for student_output, correct_output in zip(self.test_notebook_outputs, self.correct_notebook_outputs):
+            print("outputs of cells")
+
+            print(student_output)
+            print(correct_output) 
+            
+            # Check if outputs exist and compare them
+            if student_output != correct_output:
+                print("Output of a cell does not match.")
+                return False
         
-
-    def run_notebook_in_thread(self, notebook_path):
-        thread = threading.Thread(target=self.execute_notebook, args=(notebook_path,))
-        thread.start()
-        thread.join()
-
-
-import asyncio
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        return True  # Return True after looping through all cells

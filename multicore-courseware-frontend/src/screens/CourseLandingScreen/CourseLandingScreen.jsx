@@ -140,11 +140,36 @@ const CourseLandingScreen = () => {
         fetchCourses();
     }, [baseUrl]);
 
+    const markContentProgress = async () => {
+        try {
+
+            // Check if access token exists
+            if (!accessToken) {
+                console.error('Access token not found in local storage');
+                return;
+            }
+
+            // Set the authorization header with the access token
+            const headers = {
+                'Authorization': `Bearer ${accessToken}`
+            };
+
+            const body = {
+            };
+
+            // Make the HTTP request with the authorization header
+            const response = await axios.post(`${baseUrl}/courses/post-course/${courseId}/contents/${contentId}/progress/`, body, { headers });
+
+        } catch (error) {
+            console.error('Error fetching courses:', error);
+        }
+    };
 
     // Function to handle button click and mark it as visited mark the content visited or completed
-    const handleButtonClick = (contentId, notebookName) => {
+    const handleButtonClick = (contentId, notebookName, contentType) => {
+
         // Check if the button is already marked as visited
-        if (!visitedButtons.includes(contentId)) {
+        if (!visitedButtons.includes(contentId) && contentType !== "ASSESSMENT") {
             // If not visited, add it to the visitedButtons state
             setVisitedButtons([...visitedButtons, contentId]);
         }
@@ -154,33 +179,10 @@ const CourseLandingScreen = () => {
             window.open(url, '_blank'); // Open the URL in a new tab
         }
 
-        const fetch = async () => {
-            try {
-
-                // Check if access token exists
-                if (!accessToken) {
-                    console.error('Access token not found in local storage');
-                    return;
-                }
-
-                // Set the authorization header with the access token
-                const headers = {
-                    'Authorization': `Bearer ${accessToken}`
-                };
-
-                const body = {
-                };
-
-                // Make the HTTP request with the authorization header
-                const response = await axios.post(`${baseUrl}/courses/post-course/${courseId}/contents/${contentId}/progress/`, body, { headers });
-
-            } catch (error) {
-                console.error('Error fetching courses:', error);
-            }
-        };
-
-        fetch();
-        window.location.reload();
+        if (contentType !== "ASSESSMENT") {
+            markContentProgress();
+            window.location.reload();
+        }
 
     };
 
@@ -284,6 +286,11 @@ const CourseLandingScreen = () => {
 
     const handleAssessmentSubmit = (notebook_name, course_id, course_content_id) => {
 
+        if (!visitedButtons.includes(course_content_id)) {
+            // If not visited, add it to the visitedButtons state
+            setVisitedButtons([...visitedButtons, course_content_id]);
+        }
+
         // Assess the NoteBook
         const assess = async () => {
             try {
@@ -316,6 +323,11 @@ const CourseLandingScreen = () => {
         };
 
         assess();
+
+        if (response.data['Passed'] == true) {
+            markContentProgress();
+            window.location.reload();
+        }
     }
 
     return (
@@ -404,12 +416,13 @@ const CourseLandingScreen = () => {
                     <Col className="mt-4">
                         {courseContent.map((content) => (
                             <Row key={content.course_content.id} className="mb-4">
+
                                 <Button
                                     className="me-3"
                                     variant={
                                         (!visitedButtons.includes(content.course_content.id) && !content.completed) ? "primary" : "secondary"
                                     }
-                                    onClick={isTokenFetched ? () => handleButtonClick(content.course_content.id, content.course_content.content) : null} // Call handleButtonClick function only when isTokenFetched is true
+                                    onClick={isTokenFetched ? () => handleButtonClick(content.course_content.id, content.course_content.content, content.course_content.content_type) : null} // Call handleButtonClick function only when isTokenFetched is true
                                     disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
                                 >
                                     {isTokenFetched ? (
@@ -418,6 +431,7 @@ const CourseLandingScreen = () => {
                                         "Lab is being set up..."
                                     )}
                                 </Button>
+
 
                                 <Col className="mt-4 d-flex justify-content-center">
                                     {content.course_content.content_type === "ASSESSMENT" && (

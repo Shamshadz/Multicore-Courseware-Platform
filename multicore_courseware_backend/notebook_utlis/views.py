@@ -509,7 +509,12 @@ class GradeAssessment(APIView):
             print(f"Error executing notebook: {e}")
             return None
 
-    def assess_notebooks(self):        
+    def assess_notebooks(self):      
+
+        # Check if the sizes of the output lists are different
+        if len(self.test_notebook_outputs) != len(self.correct_notebook_outputs):
+            print("Number of cells in outputs lists is different.")
+            return False  
             
         for student_output, correct_output in zip(self.test_notebook_outputs, self.correct_notebook_outputs):
             print("outputs of cells")

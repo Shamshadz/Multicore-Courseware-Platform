@@ -6,12 +6,17 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied
 
 from .models import (Course, Enrollment, CourseContent, 
-                     UserCourseContentProgress, UserCourseProgress, Certificate)
+                     UserCourseContentProgress, UserCourseProgress, Certificate,
+                     QuesModel)
 from .serializers import (CourseListSerializer, CourseDetailSerializer,
                           EnrollmentListSerializer, EnrollmentCreateSerializer,
                           CourseContentSerializer, UserCourseContentProgressSerializer,
-                          UserCourseProgressSerializer, CertificateSerializer)
+                          UserCourseProgressSerializer, CertificateSerializer, 
+                          QuesModelSerializer)
 from notebook_utlis.views import uploadNotebook
+
+import os
+import cv2
 
 class CourseListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]  # Add authentication permission
@@ -373,10 +378,6 @@ class CourseProgressView(APIView):
                 "error": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-                
-
-import os
-import cv2
 
 def generate_certificate(name, course_name):
     try:
@@ -447,3 +448,17 @@ class CertificateRetrieveAPIView(generics.RetrieveAPIView):
                 "message": "Certificate retrieved unsuccessfully",
                 "data": str(e)
             })
+        
+
+class QuizQuestionsListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = QuesModelSerializer
+    
+    ##/quiz-questions/?quiz_id=<quiz_id>
+    def get_queryset(self):
+        # Assuming the quiz ID is passed as a query parameter named 'quiz_id'
+        quiz_id = self.request.query_params.get('quiz_id')
+        if quiz_id is not None:
+            return QuesModel.objects.filter(quiz_id=quiz_id)
+        else:
+            return QuesModel.objects.none()

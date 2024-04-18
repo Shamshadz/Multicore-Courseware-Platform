@@ -27,12 +27,36 @@ class CourseContent(models.Model):
     ]
     content_type = models.CharField(max_length=20, choices=content_type_choices)
     content = models.TextField()
-    sequence_no = models.IntegerField()
     any_file = models.FileField(upload_to='course_files/assessment_files/test_file', null=True, blank=True)  # Specify the upload path
     assessment_answer_file = models.FileField(upload_to='course_files/assessment_files/answer_file', null=True, blank=True)
+    quiz = models.ForeignKey('Quiz', on_delete=models.CASCADE, null=True, blank=True)
+    sequence_no = models.IntegerField()
+
 
     def __str__(self):
         return f"{self.content_type} - {self.title}"
+    
+class Quiz(models.Model):
+    title = models.CharField(max_length=255)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True, blank=True)
+    description = models.TextField()
+    
+    def __str__(self):
+        return self.title
+
+    
+class QuesModel(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, null=True, blank=True)
+    question = models.CharField(max_length=200,null=True)
+    op1 = models.CharField(max_length=200,null=True, blank=True)
+    op2 = models.CharField(max_length=200,null=True, blank=True)
+    op3 = models.CharField(max_length=200,null=True, blank=True)
+    op4 = models.CharField(max_length=200,null=True, blank=True)
+    ans = models.CharField(max_length=200,null=True)
+    
+    def __str__(self):
+        return f"Question: {self.question} for Quiz: {self.quiz.title}"
+    
     
 class UserCourseProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -43,6 +43,7 @@ import HomeScreen from "./screens/HomeScreen/HomeScreen.jsx";
 // import ProfileScreen from "./screens/ProfileScreen/ProfileScreen.jsx";
 import CoursePage from "./screens/CoursePage/CoursePage.jsx";
 import PrivateRoute from './components/PrivateRoute.jsx';
+import QuizPage from "./screens/QuizPage/QuizPage.jsx";
 
 
 
@@ -61,6 +62,8 @@ const router = createBrowserRouter(
         <Route path="/home" element={<HomeScreen />} />
         {/* <Route path="/profile" element={<ProfileScreen />} /> */}
         {/* <Route path="/:id" element={<CoursePage></CoursePage>}></Route> */}
+
+        <Route path="/quiz/:courseId/:contentId/:quizId" element={<QuizPage />} />
         <Route exact path="/enrollment/:courseId" element={<EnrollmentScreen />} />
         <Route exact path="/payment/:courseId" element={<PaymentScreen />} />
         <Route path="/course/:courseId" element={<CourseLandingScreen />} />

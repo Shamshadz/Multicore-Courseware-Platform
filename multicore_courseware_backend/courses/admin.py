@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Course, CourseContent, UserCourseProgress, UserCourseContentProgress, Enrollment, Certificate
+from .models import (Course, CourseContent, UserCourseProgress,
+                      UserCourseContentProgress, Enrollment, Certificate,
+                      Quiz, QuesModel)
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
@@ -8,9 +10,20 @@ class CourseAdmin(admin.ModelAdmin):
 
 @admin.register(CourseContent)
 class CourseContentAdmin(admin.ModelAdmin):
-    list_display = ['title', 'course', 'content_type', 'sequence_no']
-    list_filter = ['course', 'content_type']
-    search_fields = ['title']
+    list_display = ('title', 'course', 'content_type', 'sequence_no')
+    list_filter = ('content_type', 'course')
+    search_fields = ('title', 'content')
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ('title', 'course', 'description')
+    list_filter = ('course',)
+    search_fields = ('title', 'description')
+
+@admin.register(QuesModel)
+class QuesModelAdmin(admin.ModelAdmin):
+    list_display = ('quiz', 'question', 'op1', 'op2', 'op3', 'op4', 'ans')
+    search_fields = ('quiz__title', 'question', 'op1', 'op2', 'op3', 'op4', 'ans')
 
 @admin.register(UserCourseProgress)
 class UserCourseProgressAdmin(admin.ModelAdmin):

@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Course, CourseContent, UserCourseProgress, UserCourseContentProgress, Enrollment, Certificate
+from .models import (Course, CourseContent, UserCourseProgress, 
+                     UserCourseContentProgress, Enrollment, Certificate,
+                     QuesModel)
 
 class CourseListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,3 +42,9 @@ class CertificateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Certificate
         fields = '__all__'
+
+
+class QuesModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuesModel
+        fields = ['id', 'question', 'op1', 'op2', 'op3', 'op4', 'ans']

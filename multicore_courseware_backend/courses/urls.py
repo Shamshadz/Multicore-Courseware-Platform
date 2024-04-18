@@ -12,4 +12,6 @@ urlpatterns = [
     path('post-course/<int:course_id>/contents/<int:course_content_id>/progress/', views.CourseContentProgressView.as_view(), name='course-content-progress'),
     path('course-progress/<int:course_id>/', views.CourseProgressView.as_view(), name='course-progress'),
     path('get-certificate/<int:course_id>/', views.CertificateRetrieveAPIView.as_view(), name='get-certificate'),
+    path('quiz-questions/', views.QuizQuestionsListView.as_view(), name='quiz-questions-list'),
+    # /quiz-questions/?quiz_id=<quiz_id>
 ]

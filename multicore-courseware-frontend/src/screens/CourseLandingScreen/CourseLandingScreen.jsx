@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { motion } from "framer-motion";
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -30,6 +31,8 @@ const CourseLandingScreen = () => {
     const truncatedDescription = course.description && course.description.length > maxLength ? course.description.substring(0, maxLength) + "..." : course.description;
 
     const [visitedButtons, setVisitedButtons] = useState([]);
+
+    const navigate = useNavigate();
 
     const handleViewCertificate = () => {
         setShowCertificateModal(true);
@@ -140,7 +143,7 @@ const CourseLandingScreen = () => {
         fetchCourses();
     }, [baseUrl]);
 
-    const markContentProgress = async () => {
+    const markContentProgress = async (contentId) => {
         try {
 
             // Check if access token exists
@@ -180,7 +183,7 @@ const CourseLandingScreen = () => {
         }
 
         if (contentType !== "ASSESSMENT") {
-            markContentProgress();
+            markContentProgress(contentId);
             window.location.reload();
         }
 
@@ -209,9 +212,7 @@ const CourseLandingScreen = () => {
                 // Make the HTTP request with the authorization header
                 const response = await axios.post(`${baseUrl}/courses/course-progress/${courseId}/`, body, { headers });
 
-                console.log(response.data)
                 // try {
-                //     console.log(response.data)
                 //     const completed = response.data.data.completed;
                 //     setCourseCompleted(completed);
                 // }
@@ -252,7 +253,6 @@ const CourseLandingScreen = () => {
                 // Make the HTTP request with the authorization header
                 const response = await axios.get(`${baseUrl}/courses/get-certificate/${courseId}/`, { headers });
 
-                console.log(response.data);
                 setCourseCertificate(response.data.data);
 
 
@@ -286,11 +286,6 @@ const CourseLandingScreen = () => {
 
     const handleAssessmentSubmit = (notebook_name, course_id, course_content_id) => {
 
-        if (!visitedButtons.includes(course_content_id)) {
-            // If not visited, add it to the visitedButtons state
-            setVisitedButtons([...visitedButtons, course_content_id]);
-        }
-
         // Assess the NoteBook
         const assess = async () => {
             try {
@@ -315,7 +310,15 @@ const CourseLandingScreen = () => {
                 // Make the HTTP request with the authorization header
                 const response = await axios.post(`${baseUrl}/notebook-utlis/grade-notebook/`, body, { headers });
 
-                console.log(response.data)
+                if (response.data['Passed'] == true) {
+                    markContentProgress(course_content_id);
+
+                    if (!visitedButtons.includes(course_content_id)) {
+                        // If not visited, add it to the visitedButtons state
+                        setVisitedButtons([...visitedButtons, course_content_id]);
+                    }
+                    window.location.reload();
+                }
 
             } catch (error) {
                 console.error('Error fetching courses:', error);
@@ -324,11 +327,11 @@ const CourseLandingScreen = () => {
 
         assess();
 
-        if (response.data['Passed'] == true) {
-            markContentProgress();
-            window.location.reload();
-        }
     }
+
+    const handleOpenQuiz = (contentId, quizId) => {
+        navigate(`/quiz/${courseId}/${contentId}/${quizId}`);
+    };
 
     return (
         <>
@@ -417,32 +420,55 @@ const CourseLandingScreen = () => {
                         {courseContent.map((content) => (
                             <Row key={content.course_content.id} className="mb-4">
 
-                                <Button
-                                    className="me-3"
-                                    variant={
-                                        (!visitedButtons.includes(content.course_content.id) && !content.completed) ? "primary" : "secondary"
-                                    }
-                                    onClick={isTokenFetched ? () => handleButtonClick(content.course_content.id, content.course_content.content, content.course_content.content_type) : null} // Call handleButtonClick function only when isTokenFetched is true
-                                    disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
-                                >
-                                    {isTokenFetched ? (
-                                        content.course_content.title
-                                    ) : (
-                                        "Lab is being set up..."
-                                    )}
-                                </Button>
+                                {content.course_content.content_type !== "QUIZ" && (
+                                    <Button
+                                        className="me-3"
+                                        variant={
+                                            (!visitedButtons.includes(content.course_content.id) && !content.completed) ? "primary" : "secondary"
+                                        }
+                                        onClick={isTokenFetched ? () => handleButtonClick(content.course_content.id, content.course_content.content, content.course_content.content_type) : null} // Call handleButtonClick function only when isTokenFetched is true
+                                        disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
+                                    >
+                                        {isTokenFetched ? (
+                                            content.course_content.title
+                                        ) : (
+                                            "Lab is being set up..."
+                                        )}
+                                    </Button>
 
+                                )}
 
-                                <Col className="mt-4 d-flex justify-content-center">
-                                    {content.course_content.content_type === "ASSESSMENT" && (
-                                        <Button
-                                            variant="info" // Adjust the variant according to your design
-                                            onClick={() => handleAssessmentSubmit(content.course_content.content, course.id, content.course_content.id)} // Define the handleAssessmentSubmit function
-                                        >
-                                            Submit
-                                        </Button>
-                                    )}
-                                </Col>
+                                {content.course_content.content_type !== "QUIZ" && (
+
+                                    <Col className="mt-4 d-flex justify-content-center">
+                                        {content.course_content.content_type === "ASSESSMENT" && (
+                                            <Button
+                                                variant="info" // Adjust the variant according to your design
+                                                onClick={() => handleAssessmentSubmit(content.course_content.content, course.id, content.course_content.id)} // Define the handleAssessmentSubmit function
+                                            >
+                                                Submit
+                                            </Button>
+                                        )}
+                                    </Col>
+                                )}
+
+                                {content.course_content.content_type === "QUIZ" && (
+                                    <Button
+                                        className="me-3"
+                                        variant={
+                                            (!visitedButtons.includes(content.course_content.id) && !content.completed) ? "primary" : "secondary"
+                                        }
+                                        onClick={isTokenFetched ? () => handleOpenQuiz(content.course_content.id, content.course_content.quiz) : null} // Call handleButtonClick function only when isTokenFetched is true
+                                        disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
+                                    >
+                                        {isTokenFetched ? (
+                                            content.course_content.title
+                                        ) : (
+                                            "Lab is being set up..."
+                                        )}
+                                    </Button>
+
+                                )}
 
                             </Row>
                         ))}
@@ -480,6 +506,7 @@ const CourseLandingScreen = () => {
                             </Button>
                         </Row>
                     </Col>
+
 
 
                 </div>

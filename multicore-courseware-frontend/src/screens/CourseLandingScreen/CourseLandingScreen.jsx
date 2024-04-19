@@ -8,9 +8,10 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ThreeDots } from "react-loader-spinner";
 import { toast } from "react-toastify";
+import ProgressBar from 'react-bootstrap/ProgressBar';
 
 const CourseLandingScreen = () => {
-  const [loading, setLoading] = useState(false);
+
   const baseUrl = process.env.REACT_APP_API_BASE_URL;
   const jhubBaseUrl = process.env.REACT_APP_API_BASE_JHUB_URL;
   const jhubAdminToken = process.env.REACT_APP_API_JHUB_ADMIN_TOKEN;
@@ -43,6 +44,18 @@ const CourseLandingScreen = () => {
   };
 
   const { accessToken } = useSelector((state) => state.auth);
+
+  // loading for assessment button
+  const [loading, setLoading] = useState(false);
+
+
+  const calculateCompletionPercentage = (courseContent) => {
+    const totalCount = courseContent.length;
+    const completedCount = courseContent.filter(item => item.completed).length;
+    return (completedCount / totalCount) * 100;
+  };
+
+  const now = calculateCompletionPercentage(courseContent);
 
   /// Get Token For JHUB server
   useEffect(() => {
@@ -424,6 +437,11 @@ const CourseLandingScreen = () => {
             </ul>
           </motion.div>
 
+          <br />
+          <div>
+            <ProgressBar now={now} label={`${now}%`} />
+          </div>
+
           <Col className=" mt-5 ">
             <div className=" flex">
               {courseContent.map((content) => (
@@ -434,21 +452,27 @@ const CourseLandingScreen = () => {
                   {content.course_content.content_type !== "QUIZ" && (
                     <div className=" ">
                       <button
-                        className=" bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                        // className=" bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                        className={
+                          !visitedButtons.includes(content.course_content.id) &&
+                            !content.completed
+                            ? "bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                            : "bg-blue-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                        }
                         variant={
                           !visitedButtons.includes(content.course_content.id) &&
-                          !content.completed
+                            !content.completed
                             ? "primary"
                             : "secondary"
                         }
                         onClick={
                           isTokenFetched
                             ? () =>
-                                handleButtonClick(
-                                  content.course_content.id,
-                                  content.course_content.content,
-                                  content.course_content.content_type
-                                )
+                              handleButtonClick(
+                                content.course_content.id,
+                                content.course_content.content,
+                                content.course_content.content_type
+                              )
                             : null
                         } // Call handleButtonClick function only when isTokenFetched is true
                         disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
@@ -465,7 +489,13 @@ const CourseLandingScreen = () => {
                       <div>
                         {content.course_content.content_type === "QUIZ" && (
                           <button
-                            className="me-3  bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                            // className="me-3  bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                            className={
+                              !visitedButtons.includes(content.course_content.id) &&
+                                !content.completed
+                                ? "me-3  bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                                : "me-3 bg-blue-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                            }
                             variant={
                               !visitedButtons.includes(
                                 content.course_content.id
@@ -476,10 +506,10 @@ const CourseLandingScreen = () => {
                             onClick={
                               isTokenFetched
                                 ? () =>
-                                    handleOpenQuiz(
-                                      content.course_content.id,
-                                      content.course_content.quiz
-                                    )
+                                  handleOpenQuiz(
+                                    content.course_content.id,
+                                    content.course_content.quiz
+                                  )
                                 : null
                             } // Call handleButtonClick function only when isTokenFetched is true
                             disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
@@ -495,35 +525,35 @@ const CourseLandingScreen = () => {
                           <Row className="mt-4 flex  justify-center items-center  justify-content-center">
                             {content.course_content.content_type ===
                               "ASSESSMENT" && (
-                              <button
-                                className=" -translate-x-36 bg-blue-500  py-2 px-5 rounded-md font-semibold flex justify-center items-center"
-                                variant="info" // Adjust the variant according to your design
-                                onClick={() =>
-                                  handleAssessmentSubmit(
-                                    content.course_content.content,
-                                    course.id,
-                                    content.course_content.id
-                                  )
-                                } // Define the handleAssessmentSubmit function
-                              >
-                                <div className=" ">
-                                  {loading ? (
-                                    <ThreeDots
-                                      visible={true}
-                                      height="21"
-                                      width="50"
-                                      color="#ffffff"
-                                      radius="9"
-                                      ariaLabel="three-dots-loading"
-                                      wrapperStyle={{}}
-                                      wrapperClass=""
-                                    />
-                                  ) : (
-                                    <>Submit</>
-                                  )}
-                                </div>
-                              </button>
-                            )}
+                                <button
+                                  className=" -translate-x-36 bg-blue-500  py-2 px-5 rounded-md font-semibold flex justify-center items-center"
+                                  variant="info" // Adjust the variant according to your design
+                                  onClick={() =>
+                                    handleAssessmentSubmit(
+                                      content.course_content.content,
+                                      course.id,
+                                      content.course_content.id
+                                    )
+                                  } // Define the handleAssessmentSubmit function
+                                >
+                                  <div className=" ">
+                                    {loading ? (
+                                      <ThreeDots
+                                        visible={true}
+                                        height="21"
+                                        width="50"
+                                        color="#ffffff"
+                                        radius="9"
+                                        ariaLabel="three-dots-loading"
+                                        wrapperStyle={{}}
+                                        wrapperClass=""
+                                      />
+                                    ) : (
+                                      <>Submit</>
+                                    )}
+                                  </div>
+                                </button>
+                              )}
                           </Row>
                         )}
                       </div>

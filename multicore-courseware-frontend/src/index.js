@@ -39,6 +39,7 @@ import PaymentScreen from './screens/PaymentScreen/PaymentScreen.jsx';
 import CourseLandingScreen from './screens/CourseLandingScreen/CourseLandingScreen.jsx';
 import About from './screens/About/About.jsx';
 import LandingPage from "./screens/LandingPage/LandingPage.jsx";
+
 import HomeScreen from "./screens/HomeScreen/HomeScreen.jsx";
 // import ProfileScreen from "./screens/ProfileScreen/ProfileScreen.jsx";
 import CoursePage from "./screens/CoursePage/CoursePage.jsx";
@@ -61,7 +62,7 @@ const router = createBrowserRouter(
       <Route path="" element={<PrivateRoute />}>
         <Route path="/home" element={<HomeScreen />} />
         {/* <Route path="/profile" element={<ProfileScreen />} /> */}
-        {/* <Route path="/:id" element={<CoursePage></CoursePage>}></Route> */}
+        
 
         <Route path="/quiz/:courseId/:contentId/:quizId" element={<QuizPage />} />
         <Route exact path="/enrollment/:courseId" element={<EnrollmentScreen />} />

@@ -131,6 +131,12 @@ def uploadNotebook(username, course):
             file_name = course_content.any_file.name.split('/')[-1]  # Extracting file name
             file_paths_and_names.append((file_path, file_name))
 
+        if course_content.assessment_answer_file:  # Check if any_file is present
+            file_path = './media/' + course_content.assessment_answer_file.name
+            file_name = course_content.assessment_answer_file.name.split('/')[-1]  # Extracting file name
+            file_paths_and_names.append((file_path, file_name))
+
+
 
     def upload_thread(file_path, notebook_name):
         encoded_string = encode_file_to_base64(file_path)

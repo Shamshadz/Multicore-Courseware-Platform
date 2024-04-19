@@ -3,8 +3,10 @@ import { Navbar, Nav, Container, NavDropdown } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import logo from "../assets/multicore.png";
 // import Avatar from "react-avatar";
+
 import { logout } from '../features/actions/authActions'
 
 const Header = () => {
@@ -17,7 +19,9 @@ const Header = () => {
     const logoutHandler = async () => {
         try {
             dispatch(logout());
+            
             navigate("/login");
+            toast.success("Logged Out!!!")
         } catch (err) {
             console.error(err);
         }

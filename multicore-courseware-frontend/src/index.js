@@ -41,7 +41,7 @@ import About from './screens/About/About.jsx';
 import LandingPage from "./screens/LandingPage/LandingPage.jsx";
 
 import HomeScreen from "./screens/HomeScreen/HomeScreen.jsx";
-// import ProfileScreen from "./screens/ProfileScreen/ProfileScreen.jsx";
+import ProfileScreen from "./screens/ProfileScreen/ProfileScreen.jsx";
 import CoursePage from "./screens/CoursePage/CoursePage.jsx";
 import PrivateRoute from './components/PrivateRoute.jsx';
 import QuizPage from "./screens/QuizPage/QuizPage.jsx";
@@ -61,7 +61,7 @@ const router = createBrowserRouter(
 
       <Route path="" element={<PrivateRoute />}>
         <Route path="/home" element={<HomeScreen />} />
-        {/* <Route path="/profile" element={<ProfileScreen />} /> */}
+        <Route path="/profile" element={<ProfileScreen />} />
         
 
         <Route path="/quiz/:courseId/:contentId/:quizId" element={<QuizPage />} />

@@ -28,7 +28,6 @@ const LoginScreen = () => {
 
     try {
       dispatch(login({ mobile, password }));
-      toast.success("Logged In successfully!!!");
     } catch (err) {
       toast.error(err?.data?.message || err.error);
     }
@@ -39,6 +38,7 @@ const LoginScreen = () => {
     // Redirect if isAuthenticated is true
     if (isAuthenticated) {
       navigate("/");
+      toast.success("Logged In successfully!!!");
     }
   }, [isAuthenticated, navigate]);
 

@@ -7,6 +7,7 @@ import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ThreeDots } from "react-loader-spinner";
+import { toast } from "react-toastify";
 
 const CourseLandingScreen = () => {
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,7 @@ const CourseLandingScreen = () => {
   const [courseCertificate, setCourseCertificate] = useState([]);
 
   const [expanded, setExpanded] = useState(false);
-  const maxLength = 150; // Adjust the maximum length of the description to show initially
+  const maxLength = 250; // Adjust the maximum length of the description to show initially
   const truncatedDescription =
     course.description && course.description.length > maxLength
       ? course.description.substring(0, maxLength) + "..."
@@ -38,6 +39,7 @@ const CourseLandingScreen = () => {
 
   const handleViewCertificate = () => {
     setShowCertificateModal(true);
+    toast.success("Certificate Generated Successfully!!!");
   };
 
   const { accessToken } = useSelector((state) => state.auth);
@@ -337,16 +339,21 @@ const CourseLandingScreen = () => {
   return (
     <>
       <div className="bg-gray-100 min-h-screen">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <h2>{course.title}</h2>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8"
+        >
+          <h2 className=" font-bold text-4xl mb-8">{course.title}</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
             {/* Course Image */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-lg shadow-lg overflow-hidden"
+              className="bg-white rounded-lg h-[300px] flex justify-center items-center shadow-lg overflow-hidden"
             >
               <img
                 src={course.image}
@@ -356,11 +363,32 @@ const CourseLandingScreen = () => {
             </motion.div>
 
             {/* Course Introduction */}
+
+            {/* Tutor Details */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="bg-white rounded-lg shadow-lg p-6"
+            >
+              <h2 className="text-2xl font-bold ">Tutor Details</h2>
+              <div className="flex  w-full  h-[80%] justify-center items-center">
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTF7DUFYVA-fc5pClHdj5MnORfFwVTHEG3gdg&s"
+                  alt="Tutor"
+                  className="w-24 h-24 object-cover items-center rounded-full mr-4"
+                />
+                <div>
+                  <h3 className="text-lg font-bold">John Doe</h3>
+                  <p className="text-gray-700">Senior Instructor</p>
+                </div>
+              </div>
+            </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.2 }}
-              className="bg-white rounded-lg shadow-lg p-6"
+              className="bg-white col-span-2 h-[250px] w-full rounded-lg shadow-lg p-6"
             >
               <h2 className="text-2xl font-bold mb-4">Course Introduction</h2>
               <p className="text-gray-700 leading-relaxed">
@@ -375,27 +403,6 @@ const CourseLandingScreen = () => {
                     </button>
                   )}
               </p>
-            </motion.div>
-
-            {/* Tutor Details */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4 }}
-              className="bg-white rounded-lg shadow-lg p-6"
-            >
-              <h2 className="text-2xl font-bold mb-4">Tutor Details</h2>
-              <div className="flex items-center">
-                <img
-                  src="https://via.placeholder.com/64"
-                  alt="Tutor"
-                  className="w-16 h-16 rounded-full mr-4"
-                />
-                <div>
-                  <h3 className="text-lg font-bold">John Doe</h3>
-                  <p className="text-gray-700">Senior Instructor</p>
-                </div>
-              </div>
             </motion.div>
           </div>
 
@@ -417,104 +424,124 @@ const CourseLandingScreen = () => {
             </ul>
           </motion.div>
 
-          <Col className="mt-4">
-            {courseContent.map((content) => (
-              <Row key={content.course_content.id} className="mb-4">
-                {content.course_content.content_type !== "QUIZ" && (
-                  <Button
-                    className="me-3"
-                    variant={
-                      !visitedButtons.includes(content.course_content.id) &&
-                      !content.completed
-                        ? "primary"
-                        : "secondary"
-                    }
-                    onClick={
-                      isTokenFetched
-                        ? () =>
-                            handleButtonClick(
-                              content.course_content.id,
-                              content.course_content.content,
-                              content.course_content.content_type
-                            )
-                        : null
-                    } // Call handleButtonClick function only when isTokenFetched is true
-                    disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
-                  >
-                    {isTokenFetched
-                      ? content.course_content.title
-                      : "Lab is being set up..."}
-                  </Button>
-                )}
-
-                {content.course_content.content_type !== "QUIZ" && (
-                  <Col className="mt-4 d-flex justify-content-center">
-                    {content.course_content.content_type === "ASSESSMENT" && (
-                      <Button
-                        variant="info" // Adjust the variant according to your design
-                        onClick={() =>
-                          handleAssessmentSubmit(
-                            content.course_content.content,
-                            course.id,
-                            content.course_content.id
-                          )
-                        } // Define the handleAssessmentSubmit function
+          <Col className=" mt-5 ">
+            <div className=" flex">
+              {courseContent.map((content) => (
+                <Row
+                  key={content.course_content.id}
+                  className="mb-4 w-full flex"
+                >
+                  {content.course_content.content_type !== "QUIZ" && (
+                    <div className=" ">
+                      <button
+                        className=" bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                        variant={
+                          !visitedButtons.includes(content.course_content.id) &&
+                          !content.completed
+                            ? "primary"
+                            : "secondary"
+                        }
+                        onClick={
+                          isTokenFetched
+                            ? () =>
+                                handleButtonClick(
+                                  content.course_content.id,
+                                  content.course_content.content,
+                                  content.course_content.content_type
+                                )
+                            : null
+                        } // Call handleButtonClick function only when isTokenFetched is true
+                        disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
                       >
-                        {loading ? (
-                          <ThreeDots
-                            visible={true}
-                            height="21"
-                            width="50"
-                            color="#ffffff"
-                            radius="9"
-                            ariaLabel="three-dots-loading"
-                            wrapperStyle={{}}
-                            wrapperClass=""
-                          />
-                        ) : (
-                          <>Submit</>
+                        {isTokenFetched
+                          ? content.course_content.title
+                          : "Lab is being set up..."}
+                      </button>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className=" ">
+                      <div>
+                        {content.course_content.content_type === "QUIZ" && (
+                          <button
+                            className="me-3  bg-green-300 cursor-pointer hover:scale-[1.01] transition-all duration-200  py-3 rounded-full  px-4"
+                            variant={
+                              !visitedButtons.includes(
+                                content.course_content.id
+                              ) && !content.completed
+                                ? "primary"
+                                : "secondary"
+                            }
+                            onClick={
+                              isTokenFetched
+                                ? () =>
+                                    handleOpenQuiz(
+                                      content.course_content.id,
+                                      content.course_content.quiz
+                                    )
+                                : null
+                            } // Call handleButtonClick function only when isTokenFetched is true
+                            disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
+                          >
+                            {isTokenFetched
+                              ? content.course_content.title
+                              : "Lab is being set up..."}
+                          </button>
                         )}
-                      </Button>
-                    )}
-                  </Col>
-                )}
+                      </div>
+                      <div>
+                        {content.course_content.content_type !== "QUIZ" && (
+                          <Row className="mt-4 flex  justify-center items-center  justify-content-center">
+                            {content.course_content.content_type ===
+                              "ASSESSMENT" && (
+                              <button
+                                className=" -translate-x-36 bg-blue-500  py-2 px-5 rounded-md font-semibold flex justify-center items-center"
+                                variant="info" // Adjust the variant according to your design
+                                onClick={() =>
+                                  handleAssessmentSubmit(
+                                    content.course_content.content,
+                                    course.id,
+                                    content.course_content.id
+                                  )
+                                } // Define the handleAssessmentSubmit function
+                              >
+                                <div className=" ">
+                                  {loading ? (
+                                    <ThreeDots
+                                      visible={true}
+                                      height="21"
+                                      width="50"
+                                      color="#ffffff"
+                                      radius="9"
+                                      ariaLabel="three-dots-loading"
+                                      wrapperStyle={{}}
+                                      wrapperClass=""
+                                    />
+                                  ) : (
+                                    <>Submit</>
+                                  )}
+                                </div>
+                              </button>
+                            )}
+                          </Row>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Row>
+              ))}
+            </div>
 
-                {content.course_content.content_type === "QUIZ" && (
-                  <Button
-                    className="me-3"
-                    variant={
-                      !visitedButtons.includes(content.course_content.id) &&
-                      !content.completed
-                        ? "primary"
-                        : "secondary"
-                    }
-                    onClick={
-                      isTokenFetched
-                        ? () =>
-                            handleOpenQuiz(
-                              content.course_content.id,
-                              content.course_content.quiz
-                            )
-                        : null
-                    } // Call handleButtonClick function only when isTokenFetched is true
-                    disabled={!isTokenFetched} // Disable the button when isTokenFetched is false
-                  >
-                    {isTokenFetched
-                      ? content.course_content.title
-                      : "Lab is being set up..."}
+            <div>
+              {courseCompleted && (
+                <Row className="mb-4">
+                  <Button variant="success" onClick={handleViewCertificate}>
+                    View Certificate
                   </Button>
-                )}
-              </Row>
-            ))}
-
-            {courseCompleted && (
-              <Row className="mb-4">
-                <Button variant="success" onClick={handleViewCertificate}>
-                  View Certificate
-                </Button>
-              </Row>
-            )}
-
+                </Row>
+              )}
+            </div>
             <Modal
               show={showCertificateModal}
               onHide={() => setShowCertificateModal(false)}
@@ -547,13 +574,13 @@ const CourseLandingScreen = () => {
               </Modal.Footer>
             </Modal>
 
-            <Row>
-              <Button variant="secondary" href="/home">
+            <Row className=" mx-auto w-[300px] ">
+              <Button variant="secondary" href="/home" className=" ">
                 Back to Courses
               </Button>
             </Row>
           </Col>
-        </div>
+        </motion.div>
       </div>
     </>
   );

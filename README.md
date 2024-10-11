@@ -1,5 +1,8 @@
 # Multicore Courseware Platform
 
+## DEMO LINK
+https://drive.google.com/file/d/10upnOND7r6qe_S5Efby4f8RpTnnHUIQd/view?usp=drive_link
+
 This repository contains the code for a multicore courseware platform, consisting of both frontend and backend components.
 
 #### Also Add Username (should be unique) in User Model and change acccordinly (it is for shamshad)
